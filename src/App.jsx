@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, ChevronLeft, ChevronRight, Upload, Dumbbell, Clock3, MapPin, Filter, Layers3, Users, BookOpen, Monitor, Building2, Briefcase, GraduationCap, Globe, Wrench, FlaskConical, Laptop, Trash2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Upload, Dumbbell, Clock3, MapPin, Filter, Layers3, Users, BookOpen, Monitor, Building2, Briefcase, GraduationCap, Globe, Wrench, FlaskConical, Laptop, Trash2, PenTool, Wifi, Star } from "lucide-react";
 import { motion } from "framer-motion";
 
 const TRAINING_TYPE_OPTIONS = ["Nursery", "Projects", "Special Requests", "GreenLink", "TMO"];
@@ -217,7 +217,7 @@ function getContentMeta(contentType) {
     case "Practical":
       return { icon: Wrench, label: "Practical" };
     case "Hybrid":
-      return { icon: FlaskConical, label: "Hybrid" };
+      return { icon: Star, label: "Hybrid" };
     default:
       return { icon: Layers3, label: contentType || "Content" };
   }
@@ -241,6 +241,43 @@ function HierarchyTag({ icon: Icon, label }) {
       <span>{label}</span>
     </div>
   );
+}
+
+function getAudienceBadgeMeta(audience) {
+  switch (audience) {
+    case "External":
+      return { short: "E", label: "External" };
+    case "Internal - Team":
+      return { short: "I", label: "Internal Team" };
+    case "Internal - Teacher Training (TT)":
+      return { short: "I", label: "Internal TT" };
+    default:
+      return { short: "?", label: audience || "Audience" };
+  }
+}
+
+function getContentBadgeMeta(contentType) {
+  switch (contentType) {
+    case "Theory":
+      return { icon: BookOpen, label: "Theory" };
+    case "Practical":
+      return { icon: PenTool, label: "Practical" };
+    case "Hybrid":
+      return { icon: Star, label: "Hybrid" };
+    default:
+      return { icon: Layers3, label: contentType || "Content" };
+  }
+}
+
+function getDeliveryBadgeMeta(deliveryMethod) {
+  switch (deliveryMethod) {
+    case "Online":
+      return { icon: Wifi, label: "Online" };
+    case "Onsite":
+      return { icon: Building2, label: "Onsite" };
+    default:
+      return { icon: Monitor, label: deliveryMethod || "Delivery" };
+  }
 }
 
 function cn(...classes) {
@@ -313,8 +350,8 @@ function toDateKey(date) {
 function normalizeTrainingItem(item, index) {
   return {
     id: item.id ?? index + 1,
-    title: item.title ?? "Training Session",
-    trainingTopic: item.trainingTopic ?? "",
+    title: item.title ?? item.trainingTopic ?? "Training Session",
+    trainingTopic: item.trainingTopic ?? item.title ?? "",
     entity: item.entity ?? "",
     date: item.date,
     startTime: item.startTime ?? "",
@@ -511,11 +548,6 @@ export default function TrainingCalendarApp() {
   }
 
   function handleAddSession() {
-    if (!formData.title.trim()) {
-      setFormError("Please enter a session title.");
-      return;
-    }
-
     if (!formData.trainingTopic.trim()) {
       setFormError("Please select or add a training topic.");
       return;
@@ -528,7 +560,7 @@ export default function TrainingCalendarApp() {
 
     const preparedSession = {
       ...formData,
-      title: formData.title.trim(),
+      title: formData.trainingTopic.trim(),
       trainingTopic: formData.trainingTopic.trim(),
       entity: formData.entity.trim(),
       location: formData.location.trim(),
@@ -559,8 +591,8 @@ export default function TrainingCalendarApp() {
   function handleEditSession(session) {
     setEditingSessionId(session.id);
     setFormData({
-      title: session.title ?? "",
-      trainingTopic: session.trainingTopic ?? "",
+      title: session.title ?? session.trainingTopic ?? "",
+      trainingTopic: session.trainingTopic ?? session.title ?? "",
       entity: session.entity ?? "",
       date: session.date ?? toDateKey(selectedDate),
       startTime: session.startTime ?? "09:00",
@@ -784,18 +816,31 @@ export default function TrainingCalendarApp() {
                         )}
                       </div>
                       <div className="space-y-1">
-                        {sessions.slice(0, 3).map((session) => (
-                          <div
-                            key={session.id}
-                            className={cn(
-                              "truncate rounded-lg border px-2 py-1 text-[11px] font-medium",
-                              (trainingTypeStyles[session.trainingType] || trainingTypeStyles.Default).badge
-                            )}
-                          >
-                            {session.startTime ? `${session.startTime} ` : ""}
-                            {session.trainingType}: {session.title}
-                          </div>
-                        ))}
+                        {sessions.slice(0, 3).map((session) => {
+                          const audienceMeta = getAudienceMeta(session.audience);
+                          const contentMeta = getContentMeta(session.contentType);
+                          const deliveryMeta = getDeliveryMeta(session.deliveryMethod);
+                          const AudienceIcon = audienceMeta.icon;
+                          const ContentIcon = contentMeta.icon;
+                          const DeliveryIcon = deliveryMeta.icon;
+                          return (
+                            <div
+                              key={session.id}
+                              className={cn(
+                                "rounded-lg border px-2 py-1 text-[11px] font-medium",
+                                (trainingTypeStyles[session.trainingType] || trainingTypeStyles.Default).badge
+                              )}
+                            >
+                              <div className="flex items-center gap-1 overflow-hidden">
+                                <span className="shrink-0">{session.startTime ? `${session.startTime}` : "--:--"}</span>
+                                <AudienceIcon className="h-3.5 w-3.5 shrink-0" />
+                                <ContentIcon className="h-3.5 w-3.5 shrink-0" />
+                                <DeliveryIcon className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{session.trainingTopic || session.title}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
                         {sessions.length > 3 && (
                           <div className="text-[11px] text-slate-500">+{sessions.length - 3} more</div>
                         )}
@@ -815,11 +860,7 @@ export default function TrainingCalendarApp() {
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="session-title">Session title</Label>
-                    <Input id="session-title" value={formData.title} onChange={(e) => updateFormField("title", e.target.value)} placeholder="Enter training title" className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="training-topic">Training Topic</Label>
+                    <Label htmlFor="training-topic">Topic</Label>
                     <select id="training-topic" value={formData.trainingTopic} onChange={(e) => updateFormField("trainingTopic", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none">
                       <option value="">Select or add a topic</option>
                       {trainingTopicOptions.map((option) => <option key={option} value={option}>{option}</option>)}
@@ -922,6 +963,9 @@ export default function TrainingCalendarApp() {
                       const audienceMeta = getAudienceMeta(session.audience);
                       const contentMeta = getContentMeta(session.contentType);
                       const deliveryMeta = getDeliveryMeta(session.deliveryMethod);
+                      const AudienceIcon = audienceMeta.icon;
+                      const ContentIcon = contentMeta.icon;
+                      const DeliveryIcon = deliveryMeta.icon;
 
                       return (
                         <motion.div
@@ -934,7 +978,7 @@ export default function TrainingCalendarApp() {
                           <div className="p-4">
                             <div className="mb-2 flex items-start justify-between gap-3">
                               <div>
-                                <h3 className={cn("font-semibold", typeStyle.text)}>{session.title}</h3>
+                                <h3 className={cn("font-semibold", typeStyle.text)}>{session.trainingTopic || session.title}</h3>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                   <Badge className={cn("border", typeStyle.badge)}>
                                     {session.trainingType}
@@ -982,15 +1026,15 @@ export default function TrainingCalendarApp() {
                                   <span>Type: {session.trainingType}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Users className="h-4 w-4" />
+                                  <AudienceIcon className="h-4 w-4" />
                                   <span>Audience: {session.audience}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <BookOpen className="h-4 w-4" />
+                                  <ContentIcon className="h-4 w-4" />
                                   <span>Content: {session.contentType}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  {session.deliveryMethod === "Onsite" ? <Building2 className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
+                                  <DeliveryIcon className="h-4 w-4" />
                                   <span>Delivery: {session.deliveryMethod}</span>
                                 </div>
                               </div>
