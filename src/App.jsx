@@ -344,7 +344,16 @@ function isSameDay(a, b) {
 }
 
 function toDateKey(date) {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function fromDateKey(value) {
+  if (!value) return new Date();
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
 }
 
 function normalizeTrainingItem(item, index) {
@@ -411,6 +420,8 @@ export default function TrainingCalendarApp() {
   const [formError, setFormError] = useState("");
   const [customTopic, setCustomTopic] = useState("");
   const [customFacilitator, setCustomFacilitator] = useState("");
+  const [customTopicOptions, setCustomTopicOptions] = useState([]);
+  const [customFacilitatorOptions, setCustomFacilitatorOptions] = useState([]);
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
 
@@ -436,12 +447,24 @@ export default function TrainingCalendarApp() {
   }, [normalizedData]);
 
   const trainingTopicOptions = useMemo(() => {
-    return [...new Set([...DEFAULT_TRAINING_TOPICS, ...normalizedData.map((item) => item.trainingTopic).filter(Boolean)])].sort();
-  }, [normalizedData]);
+    return [
+      ...new Set([
+        ...DEFAULT_TRAINING_TOPICS,
+        ...customTopicOptions,
+        ...normalizedData.map((item) => item.trainingTopic).filter(Boolean),
+      ]),
+    ].sort();
+  }, [normalizedData, customTopicOptions]);
 
   const facilitatorOptions = useMemo(() => {
-    return [...new Set([...DEFAULT_FACILITATORS, ...normalizedData.map((item) => item.facilitator).filter(Boolean)])].sort();
-  }, [normalizedData]);
+    return [
+      ...new Set([
+        ...DEFAULT_FACILITATORS,
+        ...customFacilitatorOptions,
+        ...normalizedData.map((item) => item.facilitator).filter(Boolean),
+      ]),
+    ].sort();
+  }, [normalizedData, customFacilitatorOptions]);
 
   const filteredData = useMemo(() => {
     return normalizedData.filter((item) => {
@@ -504,7 +527,7 @@ export default function TrainingCalendarApp() {
       if (!Array.isArray(parsed)) throw new Error("JSON must be an array of session objects.");
       setTrainingData(parsed);
       setImportError("");
-      if (parsed[0]?.date) setSelectedDate(new Date(parsed[0].date));
+      if (parsed[0]?.date) setSelectedDate(fromDateKey(parsed[0].date));
     } catch (error) {
       setImportError(error.message || "Could not parse JSON.");
     }
@@ -516,7 +539,7 @@ export default function TrainingCalendarApp() {
       if (!parsed.length) throw new Error("CSV appears empty or invalid.");
       setTrainingData(parsed);
       setImportError("");
-      if (parsed[0]?.date) setSelectedDate(new Date(parsed[0].date));
+      if (parsed[0]?.date) setSelectedDate(fromDateKey(parsed[0].date));
     } catch (error) {
       setImportError(error.message || "Could not parse CSV.");
     }
@@ -577,8 +600,8 @@ export default function TrainingCalendarApp() {
       setTrainingData((current) => [...current, { id: Date.now(), ...preparedSession }]);
     }
 
-    setSelectedDate(new Date(formData.date));
-    setCurrentMonth(new Date(formData.date));
+    setSelectedDate(fromDateKey(formData.date));
+    setCurrentMonth(fromDateKey(formData.date));
     resetForm(formData.date);
   }
 
@@ -612,13 +635,19 @@ export default function TrainingCalendarApp() {
   }
 
   function handleUseCustomTopic() {
-    if (!customTopic.trim()) return;
-    updateFormField("trainingTopic", customTopic.trim());
+    const topic = customTopic.trim();
+    if (!topic) return;
+    setCustomTopicOptions((current) => (current.includes(topic) ? current : [...current, topic]));
+    updateFormField("trainingTopic", topic);
+    setCustomTopic("");
   }
 
   function handleUseCustomFacilitator() {
-    if (!customFacilitator.trim()) return;
-    updateFormField("facilitator", customFacilitator.trim());
+    const facilitator = customFacilitator.trim();
+    if (!facilitator) return;
+    setCustomFacilitatorOptions((current) => (current.includes(facilitator) ? current : [...current, facilitator]));
+    updateFormField("facilitator", facilitator);
+    setCustomFacilitator("");
   }
 
   return (
