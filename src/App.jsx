@@ -1153,3 +1153,4 @@ export default function TrainingCalendarApp() {
     </div>
   );
 }
+
