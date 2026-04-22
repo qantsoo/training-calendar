@@ -12,12 +12,13 @@ const TRAINING_TYPE_OPTIONS = ["Nursery", "Projects", "Special Requests", "Green
 const AUDIENCE_OPTIONS = ["Internal - Team", "Internal - Teacher Training (TT)", "External"];
 const CONTENT_TYPE_OPTIONS = ["Theory", "Practical", "Hybrid"];
 const DELIVERY_METHOD_OPTIONS = ["Online", "Onsite"];
-const DEFAULT_TRAINING_TOPICS = [
-  "Induction",
-  "Safety",
-  "GreenLink Orientation",
-  "Irrigation Troubleshooting",
-  "Planning Workshop",
+const DEFAULT_TRAINING_TOPICS = [$1];
+const DEFAULT_FACILITATORS = [
+  "Amina",
+  "Karim",
+  "Lina",
+  "Rashid",
+  "Nadia",
 ];
 
 const sampleTrainingData = [
@@ -366,6 +367,8 @@ export default function TrainingCalendarApp() {
   });
   const [formError, setFormError] = useState("");
   const [customTopic, setCustomTopic] = useState("");
+  const [customFacilitator, setCustomFacilitator] = useState("");
+  const [editingSessionId, setEditingSessionId] = useState(null);
 
   const normalizedData = useMemo(
     () => trainingData.map((item, index) => normalizeTrainingItem(item, index)),
@@ -390,6 +393,10 @@ export default function TrainingCalendarApp() {
 
   const trainingTopicOptions = useMemo(() => {
     return [...new Set([...DEFAULT_TRAINING_TOPICS, ...normalizedData.map((item) => item.trainingTopic).filter(Boolean)])].sort();
+  }, [normalizedData]);
+
+  const facilitatorOptions = useMemo(() => {
+    return [...new Set([...DEFAULT_FACILITATORS, ...normalizedData.map((item) => item.facilitator).filter(Boolean)])].sort();
   }, [normalizedData]);
 
   const filteredData = useMemo(() => {
@@ -475,6 +482,28 @@ export default function TrainingCalendarApp() {
     setFormData((current) => ({ ...current, [field]: value }));
   }
 
+  function resetForm(dateValue = formData.date) {
+    setFormData({
+      title: "",
+      trainingTopic: "",
+      entity: "",
+      date: dateValue,
+      startTime: "09:00",
+      endTime: "10:00",
+      trainingType: "Nursery",
+      audience: "Internal - Team",
+      contentType: "Theory",
+      deliveryMethod: "Online",
+      location: "",
+      facilitator: "",
+      notes: "",
+    });
+    setCustomTopic("");
+    setCustomFacilitator("");
+    setEditingSessionId(null);
+    setFormError("");
+  }
+
   function handleAddSession() {
     if (!formData.title.trim()) {
       setFormError("Please enter a session title.");
@@ -491,8 +520,7 @@ export default function TrainingCalendarApp() {
       return;
     }
 
-    const newSession = {
-      id: Date.now(),
+    const preparedSession = {
       ...formData,
       title: formData.title.trim(),
       trainingTopic: formData.trainingTopic.trim(),
@@ -502,35 +530,56 @@ export default function TrainingCalendarApp() {
       notes: formData.notes.trim(),
     };
 
-    setTrainingData((current) => [...current, newSession]);
+    if (editingSessionId !== null) {
+      setTrainingData((current) => current.map((item) => (
+        item.id === editingSessionId ? { ...item, ...preparedSession, id: editingSessionId } : item
+      )));
+    } else {
+      setTrainingData((current) => [...current, { id: Date.now(), ...preparedSession }]);
+    }
+
     setSelectedDate(new Date(formData.date));
     setCurrentMonth(new Date(formData.date));
-    setFormError("");
-    setFormData({
-      title: "",
-      trainingTopic: customTopic.trim() || formData.trainingTopic,
-      entity: "",
-      date: formData.date,
-      startTime: "09:00",
-      endTime: "10:00",
-      trainingType: "Nursery",
-      audience: "Internal - Team",
-      contentType: "Theory",
-      deliveryMethod: "Online",
-      location: "",
-      facilitator: "",
-      notes: "",
-    });
-    setCustomTopic("");
+    resetForm(formData.date);
   }
 
   function handleDeleteSession(sessionId) {
     setTrainingData((current) => current.filter((item) => item.id !== sessionId));
+    if (editingSessionId === sessionId) {
+      resetForm(toDateKey(selectedDate));
+    }
+  }
+
+  function handleEditSession(session) {
+    setEditingSessionId(session.id);
+    setFormData({
+      title: session.title ?? "",
+      trainingTopic: session.trainingTopic ?? "",
+      entity: session.entity ?? "",
+      date: session.date ?? toDateKey(selectedDate),
+      startTime: session.startTime ?? "09:00",
+      endTime: session.endTime ?? "10:00",
+      trainingType: session.trainingType ?? "Nursery",
+      audience: session.audience ?? "Internal - Team",
+      contentType: session.contentType ?? "Theory",
+      deliveryMethod: session.deliveryMethod ?? "Online",
+      location: session.location ?? "",
+      facilitator: session.facilitator ?? "",
+      notes: session.notes ?? "",
+    });
+    setCustomTopic("");
+    setCustomFacilitator("");
+    setFormError("");
   }
 
   function handleUseCustomTopic() {
     if (!customTopic.trim()) return;
     updateFormField("trainingTopic", customTopic.trim());
+  }
+
+  function handleUseCustomFacilitator() {
+    if (!customFacilitator.trim()) return;
+    updateFormField("facilitator", customFacilitator.trim());
   }
 
   return (
@@ -755,7 +804,7 @@ export default function TrainingCalendarApp() {
           <div className="space-y-4">
             <Card className="rounded-2xl border-slate-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-xl">Add training session</CardTitle>
+                <CardTitle className="text-xl">{editingSessionId !== null ? "Edit training session" : "Add training session"}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -823,7 +872,17 @@ export default function TrainingCalendarApp() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="facilitator">Facilitator</Label>
-                    <Input id="facilitator" value={formData.facilitator} onChange={(e) => updateFormField("facilitator", e.target.value)} placeholder="Facilitator name" className="rounded-xl" />
+                    <select id="facilitator" value={formData.facilitator} onChange={(e) => updateFormField("facilitator", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none">
+                      <option value="">Select or add a facilitator</option>
+                      {facilitatorOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-facilitator">Add new facilitator</Label>
+                    <div className="flex gap-2">
+                      <Input id="custom-facilitator" value={customFacilitator} onChange={(e) => setCustomFacilitator(e.target.value)} placeholder="Type a facilitator name" className="rounded-xl" />
+                      <Button type="button" variant="outline" onClick={handleUseCustomFacilitator} className="rounded-xl">Use</Button>
+                    </div>
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                     <Label htmlFor="notes">Notes</Label>
@@ -832,8 +891,11 @@ export default function TrainingCalendarApp() {
                 </div>
                 {formError && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={handleAddSession} className="rounded-xl">Add session</Button>
+                  <Button onClick={handleAddSession} className="rounded-xl">{editingSessionId !== null ? "Save changes" : "Add session"}</Button>
                   <Button variant="outline" onClick={() => setFormData((current) => ({ ...current, date: toDateKey(selectedDate) }))} className="rounded-xl">Use selected date</Button>
+                  {editingSessionId !== null && (
+                    <Button variant="ghost" onClick={() => resetForm(toDateKey(selectedDate))} className="rounded-xl">Cancel edit</Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -927,7 +989,10 @@ export default function TrainingCalendarApp() {
                                 </div>
                               </div>
                               {session.notes && <p className="pt-1">{session.notes}</p>}
-                              <div className="pt-2">
+                              <div className="flex flex-wrap gap-2 pt-2">
+                                <Button variant="outline" onClick={() => handleEditSession(session)} className="rounded-xl">
+                                  Edit session
+                                </Button>
                                 <Button variant="outline" onClick={() => handleDeleteSession(session.id)} className="rounded-xl">
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Delete session
