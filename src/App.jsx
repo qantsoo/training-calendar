@@ -12,7 +12,13 @@ const TRAINING_TYPE_OPTIONS = ["Nursery", "Projects", "Special Requests", "Green
 const AUDIENCE_OPTIONS = ["Internal - Team", "Internal - Teacher Training (TT)", "External"];
 const CONTENT_TYPE_OPTIONS = ["Theory", "Practical", "Hybrid"];
 const DELIVERY_METHOD_OPTIONS = ["Online", "Onsite"];
-const DEFAULT_TRAINING_TOPICS = [$1];
+const DEFAULT_TRAINING_TOPICS = [
+  "Induction",
+  "Safety",
+  "GreenLink Orientation",
+  "Irrigation Troubleshooting",
+  "Planning Workshop",
+];
 const DEFAULT_FACILITATORS = [
   "Amina",
   "Karim",
