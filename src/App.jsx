@@ -1,3 +1,4 @@
+import { supabase } from "./supabaseClient";
 import React, { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, ChevronLeft, ChevronRight, Upload, Dumbbell, Clock3, MapPin, Filter, Layers3, Users, BookOpen, Monitor, Building2, Briefcase, GraduationCap, Globe, Wrench, FlaskConical, Laptop, Trash2, PenTool, Wifi, Star } from "lucide-react";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Upload,
+  Dumbbell,
+  Clock3,
+  MapPin,
+  Filter,
+  Layers3,
+  Users,
+  BookOpen,
+  Monitor,
+  Building2,
+  Briefcase,
+  GraduationCap,
+  Globe,
+  Wrench,
+  Laptop,
+  Trash2,
+  PenTool,
+  Wifi,
+  Star,
+} from "lucide-react";
 import { motion } from "framer-motion";
 
 const TRAINING_TYPE_OPTIONS = ["Nursery", "Projects", "Special Requests", "GreenLink", "TMO"];
@@ -14,7 +38,6 @@ const CONTENT_TYPE_OPTIONS = ["Theory", "Practical", "Hybrid"];
 const DELIVERY_METHOD_OPTIONS = ["Online", "Onsite"];
 const DEFAULT_TRAINING_TOPICS = [];
 const DEFAULT_FACILITATORS = [];
-
 const sampleTrainingData = [];
 
 const trainingTypeStyles = {
@@ -102,43 +125,6 @@ function HierarchyTag({ icon: Icon, label }) {
   );
 }
 
-function getAudienceBadgeMeta(audience) {
-  switch (audience) {
-    case "External":
-      return { short: "E", label: "External" };
-    case "Internal - Team":
-      return { short: "I", label: "Internal Team" };
-    case "Internal - Teacher Training (TT)":
-      return { short: "I", label: "Internal TT" };
-    default:
-      return { short: "?", label: audience || "Audience" };
-  }
-}
-
-function getContentBadgeMeta(contentType) {
-  switch (contentType) {
-    case "Theory":
-      return { icon: BookOpen, label: "Theory" };
-    case "Practical":
-      return { icon: PenTool, label: "Practical" };
-    case "Hybrid":
-      return { icon: Star, label: "Hybrid" };
-    default:
-      return { icon: Layers3, label: contentType || "Content" };
-  }
-}
-
-function getDeliveryBadgeMeta(deliveryMethod) {
-  switch (deliveryMethod) {
-    case "Online":
-      return { icon: Wifi, label: "Online" };
-    case "Onsite":
-      return { icon: Building2, label: "Onsite" };
-    default:
-      return { icon: Monitor, label: deliveryMethod || "Delivery" };
-  }
-}
-
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
@@ -218,16 +204,16 @@ function fromDateKey(value) {
 function normalizeTrainingItem(item, index) {
   return {
     id: item.id ?? index + 1,
-    title: item.title ?? item.trainingTopic ?? "Training Session",
-    trainingTopic: item.trainingTopic ?? item.title ?? "",
+    title: item.title ?? item.training_topic ?? item.trainingTopic ?? "Training Session",
+    trainingTopic: item.trainingTopic ?? item.training_topic ?? item.title ?? "",
     entity: item.entity ?? "",
-    date: item.date,
-    startTime: item.startTime ?? "",
-    endTime: item.endTime ?? "",
-    trainingType: item.trainingType ?? item.type ?? "Nursery",
+    date: item.date ?? item.session_date ?? "",
+    startTime: item.startTime ?? item.start_time ?? "",
+    endTime: item.endTime ?? item.end_time ?? "",
+    trainingType: item.trainingType ?? item.training_type ?? item.type ?? "Nursery",
     audience: item.audience ?? "Internal - Team",
-    contentType: item.contentType ?? item.content ?? "Theory",
-    deliveryMethod: item.deliveryMethod ?? "Online",
+    contentType: item.contentType ?? item.content_type ?? item.content ?? "Theory",
+    deliveryMethod: item.deliveryMethod ?? item.delivery_method ?? "Online",
     location: item.location ?? "",
     facilitator: item.facilitator ?? item.coach ?? "",
     notes: item.notes ?? "",
@@ -235,8 +221,8 @@ function normalizeTrainingItem(item, index) {
 }
 
 export default function TrainingCalendarApp() {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 3, 1));
-  const [selectedDate, setSelectedDate] = useState(new Date(2026, 3, 21));
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [trainingData, setTrainingData] = useState(sampleTrainingData);
   const [selectedTrainingType, setSelectedTrainingType] = useState("All");
   const [selectedAudience, setSelectedAudience] = useState("All");
@@ -265,7 +251,7 @@ export default function TrainingCalendarApp() {
     title: "",
     trainingTopic: "",
     entity: "",
-    date: "2026-04-21",
+    date: toDateKey(new Date()),
     startTime: "09:00",
     endTime: "10:00",
     trainingType: "Nursery",
@@ -306,12 +292,24 @@ export default function TrainingCalendarApp() {
   }, [normalizedData]);
 
   const trainingTopicOptions = useMemo(() => {
-    return [...new Set([...customTopicOptions, ...(formData.trainingTopic ? [formData.trainingTopic] : [])])].sort();
-  }, [customTopicOptions, formData.trainingTopic]);
+    return [
+      ...new Set([
+        ...DEFAULT_TRAINING_TOPICS,
+        ...customTopicOptions,
+        ...normalizedData.map((item) => item.trainingTopic).filter(Boolean),
+      ]),
+    ].sort();
+  }, [normalizedData, customTopicOptions]);
 
   const facilitatorOptions = useMemo(() => {
-    return [...new Set([...customFacilitatorOptions, ...(formData.facilitator ? [formData.facilitator] : [])])].sort();
-  }, [customFacilitatorOptions, formData.facilitator]);
+    return [
+      ...new Set([
+        ...DEFAULT_FACILITATORS,
+        ...customFacilitatorOptions,
+        ...normalizedData.map((item) => item.facilitator).filter(Boolean),
+      ]),
+    ].sort();
+  }, [normalizedData, customFacilitatorOptions]);
 
   const filteredData = useMemo(() => {
     return normalizedData.filter((item) => {
@@ -319,11 +317,26 @@ export default function TrainingCalendarApp() {
       const matchesAudience = selectedAudience === "All" || item.audience === selectedAudience;
       const matchesContentType = selectedContentType === "All" || item.contentType === selectedContentType;
       const matchesDeliveryMethod = selectedDeliveryMethod === "All" || item.deliveryMethod === selectedDeliveryMethod;
-      const haystack = `${item.title} ${item.trainingTopic} ${item.entity} ${item.trainingType} ${item.audience} ${item.contentType} ${item.deliveryMethod} ${item.location} ${item.facilitator} ${item.notes}`.toLowerCase();
+      const haystack =
+        `${item.title} ${item.trainingTopic} ${item.entity} ${item.trainingType} ${item.audience} ${item.contentType} ${item.deliveryMethod} ${item.location} ${item.facilitator} ${item.notes}`.toLowerCase();
       const matchesSearch = haystack.includes(searchTerm.toLowerCase());
-      return matchesTrainingType && matchesAudience && matchesContentType && matchesDeliveryMethod && matchesSearch;
+
+      return (
+        matchesTrainingType &&
+        matchesAudience &&
+        matchesContentType &&
+        matchesDeliveryMethod &&
+        matchesSearch
+      );
     });
-  }, [normalizedData, selectedTrainingType, selectedAudience, selectedContentType, selectedDeliveryMethod, searchTerm]);
+  }, [
+    normalizedData,
+    selectedTrainingType,
+    selectedAudience,
+    selectedContentType,
+    selectedDeliveryMethod,
+    searchTerm,
+  ]);
 
   const sessionsByDate = useMemo(() => {
     return filteredData.reduce((acc, item) => {
@@ -339,12 +352,14 @@ export default function TrainingCalendarApp() {
   }, [sessionsByDate, selectedDate]);
 
   const totalSessions = filteredData.length;
+
   const trainingTypeCounts = useMemo(() => {
     return filteredData.reduce((acc, item) => {
       acc[item.trainingType] = (acc[item.trainingType] || 0) + 1;
       return acc;
     }, {});
   }, [filteredData]);
+
   const totalHours = filteredData.reduce((sum, item) => {
     if (!item.startTime || !item.endTime) return sum;
     const [sh, sm] = item.startTime.split(":").map(Number);
@@ -355,6 +370,20 @@ export default function TrainingCalendarApp() {
 
   const monthCells = getMonthGrid(currentMonth);
   const today = new Date();
+
+  async function fetchSessions() {
+    const { data, error } = await supabase
+      .from("training_sessions")
+      .select("*")
+      .order("session_date", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching sessions:", error);
+      return;
+    }
+
+    setTrainingData(data || []);
+  }
 
   function handlePrevMonth() {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
@@ -367,6 +396,10 @@ export default function TrainingCalendarApp() {
   React.useEffect(() => {
     setFormData((current) => ({ ...current, date: toDateKey(selectedDate) }));
   }, [selectedDate]);
+
+  React.useEffect(() => {
+    fetchSessions();
+  }, []);
 
   function handleImportJson() {
     try {
@@ -418,7 +451,7 @@ export default function TrainingCalendarApp() {
     setFormError("");
   }
 
-  function handleAddSession() {
+  async function handleAddSession() {
     if (!formData.trainingTopic.trim()) {
       setFormError("Please select or add a training topic.");
       return;
@@ -430,30 +463,63 @@ export default function TrainingCalendarApp() {
     }
 
     const preparedSession = {
-      ...formData,
       title: formData.trainingTopic.trim(),
-      trainingTopic: formData.trainingTopic.trim(),
+      training_topic: formData.trainingTopic.trim(),
       entity: formData.entity.trim(),
+      session_date: formData.date,
+      start_time: formData.startTime,
+      end_time: formData.endTime,
+      training_type: formData.trainingType,
+      audience: formData.audience,
+      content_type: formData.contentType,
+      delivery_method: formData.deliveryMethod,
       location: formData.location.trim(),
       facilitator: formData.facilitator.trim(),
       notes: formData.notes.trim(),
     };
 
+    let error;
+
     if (editingSessionId !== null) {
-      setTrainingData((current) => current.map((item) => (
-        item.id === editingSessionId ? { ...item, ...preparedSession, id: editingSessionId } : item
-      )));
+      const result = await supabase
+        .from("training_sessions")
+        .update(preparedSession)
+        .eq("id", editingSessionId);
+
+      error = result.error;
     } else {
-      setTrainingData((current) => [...current, { id: Date.now(), ...preparedSession }]);
+      const result = await supabase
+        .from("training_sessions")
+        .insert([preparedSession]);
+
+      error = result.error;
     }
 
+    if (error) {
+      console.error("Error saving session:", error);
+      setFormError(error.message || "Error saving session.");
+      return;
+    }
+
+    await fetchSessions();
     setSelectedDate(fromDateKey(formData.date));
     setCurrentMonth(fromDateKey(formData.date));
     resetForm(formData.date);
   }
 
-  function handleDeleteSession(sessionId) {
-    setTrainingData((current) => current.filter((item) => item.id !== sessionId));
+  async function handleDeleteSession(sessionId) {
+    const { error } = await supabase
+      .from("training_sessions")
+      .delete()
+      .eq("id", sessionId);
+
+    if (error) {
+      console.error("Error deleting session:", error);
+      return;
+    }
+
+    await fetchSessions();
+
     if (editingSessionId === sessionId) {
       resetForm(toDateKey(selectedDate));
     }
@@ -538,6 +604,7 @@ export default function TrainingCalendarApp() {
                     Display, filter, and review training sessions by day.
                   </p>
                 </div>
+
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="relative w-full min-w-[220px] md:w-64">
                     <Input
@@ -547,6 +614,7 @@ export default function TrainingCalendarApp() {
                       className="rounded-xl bg-white"
                     />
                   </div>
+
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
                       <Filter className="h-4 w-4" />
@@ -562,6 +630,7 @@ export default function TrainingCalendarApp() {
                         ))}
                       </select>
                     </div>
+
                     <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
                       <Users className="h-4 w-4" />
                       <select
@@ -576,6 +645,7 @@ export default function TrainingCalendarApp() {
                         ))}
                       </select>
                     </div>
+
                     <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
                       <BookOpen className="h-4 w-4" />
                       <select
@@ -590,6 +660,7 @@ export default function TrainingCalendarApp() {
                         ))}
                       </select>
                     </div>
+
                     <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
                       <Monitor className="h-4 w-4" />
                       <select
@@ -608,6 +679,7 @@ export default function TrainingCalendarApp() {
                 </div>
               </div>
             </CardHeader>
+
             <CardContent className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-3">
                 <Card className="rounded-2xl border-slate-200 shadow-none">
@@ -621,6 +693,7 @@ export default function TrainingCalendarApp() {
                     </div>
                   </CardContent>
                 </Card>
+
                 <Card className="rounded-2xl border-slate-200 shadow-none">
                   <CardContent className="flex items-center gap-3 p-4">
                     <div className="rounded-2xl bg-slate-100 p-3">
@@ -632,6 +705,7 @@ export default function TrainingCalendarApp() {
                     </div>
                   </CardContent>
                 </Card>
+
                 <Card className="rounded-2xl border-slate-200 shadow-none">
                   <CardContent className="p-4">
                     <p className="text-xs uppercase tracking-wide text-slate-500">Selected Date</p>
@@ -713,6 +787,7 @@ export default function TrainingCalendarApp() {
                           </Badge>
                         )}
                       </div>
+
                       <div className="space-y-1">
                         {sessions.slice(0, 3).map((session) => {
                           const audienceMeta = getAudienceMeta(session.audience);
@@ -721,6 +796,7 @@ export default function TrainingCalendarApp() {
                           const AudienceIcon = audienceMeta.icon;
                           const ContentIcon = contentMeta.icon;
                           const DeliveryIcon = deliveryMeta.icon;
+
                           return (
                             <div
                               key={session.id}
@@ -750,10 +826,12 @@ export default function TrainingCalendarApp() {
             </CardContent>
           </Card>
 
-          <div className={cn(
-            "hidden lg:flex items-start justify-center pt-24",
-            isRightPanelCollapsed ? "lg:-ml-2" : "lg:-mx-2"
-          )}>
+          <div
+            className={cn(
+              "hidden lg:flex items-start justify-center pt-24",
+              isRightPanelCollapsed ? "lg:-ml-2" : "lg:-mx-2"
+            )}
+          >
             <button
               type="button"
               onClick={() => setIsRightPanelCollapsed((current) => !current)}
@@ -765,314 +843,452 @@ export default function TrainingCalendarApp() {
             </button>
           </div>
 
-          {!isRightPanelCollapsed && <div className="space-y-4">
-            <Card className="rounded-2xl border-slate-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-xl">{editingSessionId !== null ? "Edit training session" : "Add training session"}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="training-topic">Topic</Label>
-                    <details className="group rounded-xl border border-slate-200 bg-white">
-                      <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm text-slate-700">
-                        <span>{formData.trainingTopic || "Select or add a topic"}</span>
-                        <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
-                      </summary>
-                      <div className="border-t border-slate-100 p-2">
-                        {trainingTopicOptions.length === 0 ? (
-                          <div className="px-2 py-1 text-xs text-slate-500">No topics yet. Add one below.</div>
-                        ) : (
-                          <div className="space-y-1">
-                            {trainingTopicOptions.map((option) => (
-                              <div key={option} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 hover:bg-slate-50">
-                                <button
-                                  type="button"
-                                  onClick={() => updateFormField("trainingTopic", option)}
-                                  className="flex-1 text-left text-sm text-slate-700"
-                                >
-                                  {option}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveTopicOption(option)}
-                                  className="rounded-full px-1 text-slate-400 hover:text-red-600"
-                                  aria-label={`Remove ${option}`}
-                                  title={`Remove ${option}`}
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </details>
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="custom-topic">Add new topic</Label>
-                    <div className="flex gap-2">
-                      <Input id="custom-topic" value={customTopic} onChange={(e) => setCustomTopic(e.target.value)} placeholder="Type a new training topic" className="rounded-xl" />
-                      <Button type="button" variant="outline" onClick={handleUseCustomTopic} className="rounded-xl">Use</Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="entity">Entity</Label>
-                    <Input id="entity" value={formData.entity} onChange={(e) => updateFormField("entity", e.target.value)} placeholder="Institution, company, or contractor" className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="session-date">Date</Label>
-                    <Input id="session-date" type="date" value={formData.date} onChange={(e) => updateFormField("date", e.target.value)} className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="training-type">Training Type</Label>
-                    <select id="training-type" value={formData.trainingType} onChange={(e) => updateFormField("trainingType", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none">
-                      {TRAINING_TYPE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="start-time">Start time</Label>
-                    <Input id="start-time" type="time" value={formData.startTime} onChange={(e) => updateFormField("startTime", e.target.value)} className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="end-time">End time</Label>
-                    <Input id="end-time" type="time" value={formData.endTime} onChange={(e) => updateFormField("endTime", e.target.value)} className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="audience">Audience</Label>
-                    <select id="audience" value={formData.audience} onChange={(e) => updateFormField("audience", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none">
-                      {AUDIENCE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="content-type">Content</Label>
-                    <select id="content-type" value={formData.contentType} onChange={(e) => updateFormField("contentType", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none">
-                      {CONTENT_TYPE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="delivery-method">Delivery Method</Label>
-                    <select id="delivery-method" value={formData.deliveryMethod} onChange={(e) => updateFormField("deliveryMethod", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none">
-                      {DELIVERY_METHOD_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input id="location" value={formData.location} onChange={(e) => updateFormField("location", e.target.value)} placeholder="Teams, site, room..." className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="facilitator">Facilitator</Label>
-                    <details className="group rounded-xl border border-slate-200 bg-white">
-                      <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm text-slate-700">
-                        <span>{formData.facilitator || "Select or add a facilitator"}</span>
-                        <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
-                      </summary>
-                      <div className="border-t border-slate-100 p-2">
-                        {facilitatorOptions.length === 0 ? (
-                          <div className="px-2 py-1 text-xs text-slate-500">No facilitators yet. Add one below.</div>
-                        ) : (
-                          <div className="space-y-1">
-                            {facilitatorOptions.map((option) => (
-                              <div key={option} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 hover:bg-slate-50">
-                                <button
-                                  type="button"
-                                  onClick={() => updateFormField("facilitator", option)}
-                                  className="flex-1 text-left text-sm text-slate-700"
-                                >
-                                  {option}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveFacilitatorOption(option)}
-                                  className="rounded-full px-1 text-slate-400 hover:text-red-600"
-                                  aria-label={`Remove ${option}`}
-                                  title={`Remove ${option}`}
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </details>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="custom-facilitator">Add new facilitator</Label>
-                    <div className="flex gap-2">
-                      <Input id="custom-facilitator" value={customFacilitator} onChange={(e) => setCustomFacilitator(e.target.value)} placeholder="Type a facilitator name" className="rounded-xl" />
-                      <Button type="button" variant="outline" onClick={handleUseCustomFacilitator} className="rounded-xl">Use</Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="notes">Notes</Label>
-                    <Textarea id="notes" value={formData.notes} onChange={(e) => updateFormField("notes", e.target.value)} className="min-h-[100px] rounded-2xl" placeholder="Optional notes" />
-                  </div>
-                </div>
-                {formError && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
-                <div className="flex flex-wrap gap-2">
-                  <Button onClick={handleAddSession} className="rounded-xl">{editingSessionId !== null ? "Save changes" : "Add session"}</Button>
-                  <Button variant="outline" onClick={() => setFormData((current) => ({ ...current, date: toDateKey(selectedDate) }))} className="rounded-xl">Use selected date</Button>
-                  {editingSessionId !== null && (
-                    <Button variant="ghost" onClick={() => resetForm(toDateKey(selectedDate))} className="rounded-xl">Cancel edit</Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+          {!isRightPanelCollapsed && (
+            <div className="space-y-4">
+              <Card className="rounded-2xl border-slate-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl">
+                    {editingSessionId !== null ? "Edit training session" : "Add training session"}
+                  </CardTitle>
+                </CardHeader>
 
-            <Card className="rounded-2xl border-slate-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-xl">Training sessions on selected date</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {selectedSessions.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
-                    No training sessions match the current filters for this day.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {selectedSessions.map((session) => {
-                      const typeStyle = trainingTypeStyles[session.trainingType] || trainingTypeStyles.Default;
-                      const audienceMeta = getAudienceMeta(session.audience);
-                      const contentMeta = getContentMeta(session.contentType);
-                      const deliveryMeta = getDeliveryMeta(session.deliveryMethod);
-                      const AudienceIcon = audienceMeta.icon;
-                      const ContentIcon = contentMeta.icon;
-                      const DeliveryIcon = deliveryMeta.icon;
-
-                      return (
-                        <motion.div
-                          key={session.id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={cn("overflow-hidden rounded-2xl border bg-white", typeStyle.soft)}
-                        >
-                          <div className={cn("h-2 w-full", typeStyle.accent)} />
-                          <div className="p-4">
-                            <div className="mb-2 flex items-start justify-between gap-3">
-                              <div>
-                                <h3 className={cn("font-semibold", typeStyle.text)}>{session.trainingTopic || session.title}</h3>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  <Badge className={cn("border", typeStyle.badge)}>
-                                    {session.trainingType}
-                                  </Badge>
-                                  {session.trainingTopic && <Badge variant="outline">Topic: {session.trainingTopic}</Badge>}
-                                  {session.entity && <Badge variant="outline">Entity: {session.entity}</Badge>}
-                                  {session.facilitator && <Badge variant="outline">Facilitator: {session.facilitator}</Badge>}
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="training-topic">Topic</Label>
+                      <details className="group rounded-xl border border-slate-200 bg-white">
+                        <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm text-slate-700">
+                          <span>{formData.trainingTopic || "Select or add a topic"}</span>
+                          <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
+                        </summary>
+                        <div className="border-t border-slate-100 p-2">
+                          {trainingTopicOptions.length === 0 ? (
+                            <div className="px-2 py-1 text-xs text-slate-500">No topics yet. Add one below.</div>
+                          ) : (
+                            <div className="space-y-1">
+                              {trainingTopicOptions.map((option) => (
+                                <div key={option} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 hover:bg-slate-50">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateFormField("trainingTopic", option)}
+                                    className="flex-1 text-left text-sm text-slate-700"
+                                  >
+                                    {option}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveTopicOption(option)}
+                                    className="rounded-full px-1 text-slate-400 hover:text-red-600"
+                                    aria-label={`Remove ${option}`}
+                                    title={`Remove ${option}`}
+                                  >
+                                    ×
+                                  </button>
                                 </div>
-                              </div>
+                              ))}
                             </div>
-                            <div className="space-y-3 text-sm text-slate-600">
-                              <div className="flex items-center gap-2">
-                                <Clock3 className="h-4 w-4" />
-                                <span>
-                                  {session.startTime || "--:--"}
-                                  {session.endTime ? ` - ${session.endTime}` : ""}
-                                </span>
-                              </div>
-                              {session.location && (
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="h-4 w-4" />
-                                  <span>{session.location}</span>
+                          )}
+                        </div>
+                      </details>
+                    </div>
+
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="custom-topic">Add new topic</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="custom-topic"
+                          value={customTopic}
+                          onChange={(e) => setCustomTopic(e.target.value)}
+                          placeholder="Type a new training topic"
+                          className="rounded-xl"
+                        />
+                        <Button type="button" variant="outline" onClick={handleUseCustomTopic} className="rounded-xl">
+                          Use
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="entity">Entity</Label>
+                      <Input
+                        id="entity"
+                        value={formData.entity}
+                        onChange={(e) => updateFormField("entity", e.target.value)}
+                        placeholder="Institution, company, or contractor"
+                        className="rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="session-date">Date</Label>
+                      <Input
+                        id="session-date"
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => updateFormField("date", e.target.value)}
+                        className="rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="training-type">Training Type</Label>
+                      <select
+                        id="training-type"
+                        value={formData.trainingType}
+                        onChange={(e) => updateFormField("trainingType", e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                      >
+                        {TRAINING_TYPE_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="start-time">Start time</Label>
+                      <Input
+                        id="start-time"
+                        type="time"
+                        value={formData.startTime}
+                        onChange={(e) => updateFormField("startTime", e.target.value)}
+                        className="rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="end-time">End time</Label>
+                      <Input
+                        id="end-time"
+                        type="time"
+                        value={formData.endTime}
+                        onChange={(e) => updateFormField("endTime", e.target.value)}
+                        className="rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="audience">Audience</Label>
+                      <select
+                        id="audience"
+                        value={formData.audience}
+                        onChange={(e) => updateFormField("audience", e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                      >
+                        {AUDIENCE_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="content-type">Content</Label>
+                      <select
+                        id="content-type"
+                        value={formData.contentType}
+                        onChange={(e) => updateFormField("contentType", e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                      >
+                        {CONTENT_TYPE_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="delivery-method">Delivery Method</Label>
+                      <select
+                        id="delivery-method"
+                        value={formData.deliveryMethod}
+                        onChange={(e) => updateFormField("deliveryMethod", e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                      >
+                        {DELIVERY_METHOD_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={formData.location}
+                        onChange={(e) => updateFormField("location", e.target.value)}
+                        placeholder="Teams, site, room..."
+                        className="rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="facilitator">Facilitator</Label>
+                      <details className="group rounded-xl border border-slate-200 bg-white">
+                        <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm text-slate-700">
+                          <span>{formData.facilitator || "Select or add a facilitator"}</span>
+                          <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
+                        </summary>
+                        <div className="border-t border-slate-100 p-2">
+                          {facilitatorOptions.length === 0 ? (
+                            <div className="px-2 py-1 text-xs text-slate-500">No facilitators yet. Add one below.</div>
+                          ) : (
+                            <div className="space-y-1">
+                              {facilitatorOptions.map((option) => (
+                                <div key={option} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 hover:bg-slate-50">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateFormField("facilitator", option)}
+                                    className="flex-1 text-left text-sm text-slate-700"
+                                  >
+                                    {option}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveFacilitatorOption(option)}
+                                    className="rounded-full px-1 text-slate-400 hover:text-red-600"
+                                    aria-label={`Remove ${option}`}
+                                    title={`Remove ${option}`}
+                                  >
+                                    ×
+                                  </button>
                                 </div>
-                              )}
-                              {session.entity && (
-                                <div className="flex items-center gap-2">
-                                  <Building2 className="h-4 w-4" />
-                                  <span>Entity: {session.entity}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-facilitator">Add new facilitator</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="custom-facilitator"
+                          value={customFacilitator}
+                          onChange={(e) => setCustomFacilitator(e.target.value)}
+                          placeholder="Type a facilitator name"
+                          className="rounded-xl"
+                        />
+                        <Button type="button" variant="outline" onClick={handleUseCustomFacilitator} className="rounded-xl">
+                          Use
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="notes">Notes</Label>
+                      <Textarea
+                        id="notes"
+                        value={formData.notes}
+                        onChange={(e) => updateFormField("notes", e.target.value)}
+                        className="min-h-[100px] rounded-2xl"
+                        placeholder="Optional notes"
+                      />
+                    </div>
+                  </div>
+
+                  {formError && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                      {formError}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={handleAddSession} className="rounded-xl">
+                      {editingSessionId !== null ? "Save changes" : "Add session"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setFormData((current) => ({ ...current, date: toDateKey(selectedDate) }))}
+                      className="rounded-xl"
+                    >
+                      Use selected date
+                    </Button>
+                    {editingSessionId !== null && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => resetForm(toDateKey(selectedDate))}
+                        className="rounded-xl"
+                      >
+                        Cancel edit
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border-slate-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl">Training sessions on selected date</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedSessions.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
+                      No training sessions match the current filters for this day.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {selectedSessions.map((session) => {
+                        const typeStyle = trainingTypeStyles[session.trainingType] || trainingTypeStyles.Default;
+                        const audienceMeta = getAudienceMeta(session.audience);
+                        const contentMeta = getContentMeta(session.contentType);
+                        const deliveryMeta = getDeliveryMeta(session.deliveryMethod);
+                        const AudienceIcon = audienceMeta.icon;
+                        const ContentIcon = contentMeta.icon;
+                        const DeliveryIcon = deliveryMeta.icon;
+
+                        return (
+                          <motion.div
+                            key={session.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={cn("overflow-hidden rounded-2xl border bg-white", typeStyle.soft)}
+                          >
+                            <div className={cn("h-2 w-full", typeStyle.accent)} />
+                            <div className="p-4">
+                              <div className="mb-2 flex items-start justify-between gap-3">
+                                <div>
+                                  <h3 className={cn("font-semibold", typeStyle.text)}>
+                                    {session.trainingTopic || session.title}
+                                  </h3>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <Badge className={cn("border", typeStyle.badge)}>
+                                      {session.trainingType}
+                                    </Badge>
+                                    {session.trainingTopic && <Badge variant="outline">Topic: {session.trainingTopic}</Badge>}
+                                    {session.entity && <Badge variant="outline">Entity: {session.entity}</Badge>}
+                                    {session.facilitator && <Badge variant="outline">Facilitator: {session.facilitator}</Badge>}
+                                  </div>
                                 </div>
-                              )}
-                              <div className="flex flex-wrap gap-2 pt-1">
-                                <HierarchyTag icon={audienceMeta.icon} label={audienceMeta.label} />
-                                <HierarchyTag icon={contentMeta.icon} label={contentMeta.label} />
-                                <HierarchyTag icon={deliveryMeta.icon} label={deliveryMeta.label} />
                               </div>
-                              <div className="grid gap-2 pt-1 text-sm sm:grid-cols-2">
-                                {session.trainingTopic && (
-                                  <div className="flex items-center gap-2 sm:col-span-2">
-                                    <BookOpen className="h-4 w-4" />
-                                    <span>Topic: {session.trainingTopic}</span>
+
+                              <div className="space-y-3 text-sm text-slate-600">
+                                <div className="flex items-center gap-2">
+                                  <Clock3 className="h-4 w-4" />
+                                  <span>
+                                    {session.startTime || "--:--"}
+                                    {session.endTime ? ` - ${session.endTime}` : ""}
+                                  </span>
+                                </div>
+
+                                {session.location && (
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="h-4 w-4" />
+                                    <span>{session.location}</span>
                                   </div>
                                 )}
-                                <div className="flex items-center gap-2">
-                                  <Layers3 className="h-4 w-4" />
-                                  <span>Type: {session.trainingType}</span>
+
+                                {session.entity && (
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="h-4 w-4" />
+                                    <span>Entity: {session.entity}</span>
+                                  </div>
+                                )}
+
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  <HierarchyTag icon={audienceMeta.icon} label={audienceMeta.label} />
+                                  <HierarchyTag icon={contentMeta.icon} label={contentMeta.label} />
+                                  <HierarchyTag icon={deliveryMeta.icon} label={deliveryMeta.label} />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <AudienceIcon className="h-4 w-4" />
-                                  <span>Audience: {session.audience}</span>
+
+                                <div className="grid gap-2 pt-1 text-sm sm:grid-cols-2">
+                                  {session.trainingTopic && (
+                                    <div className="flex items-center gap-2 sm:col-span-2">
+                                      <BookOpen className="h-4 w-4" />
+                                      <span>Topic: {session.trainingTopic}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-2">
+                                    <Layers3 className="h-4 w-4" />
+                                    <span>Type: {session.trainingType}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <AudienceIcon className="h-4 w-4" />
+                                    <span>Audience: {session.audience}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <ContentIcon className="h-4 w-4" />
+                                    <span>Content: {session.contentType}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <DeliveryIcon className="h-4 w-4" />
+                                    <span>Delivery: {session.deliveryMethod}</span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <ContentIcon className="h-4 w-4" />
-                                  <span>Content: {session.contentType}</span>
+
+                                {session.notes && <p className="pt-1">{session.notes}</p>}
+
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                  <Button variant="outline" onClick={() => handleEditSession(session)} className="rounded-xl">
+                                    Edit session
+                                  </Button>
+                                  <Button variant="outline" onClick={() => handleDeleteSession(session.id)} className="rounded-xl">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete session
+                                  </Button>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <DeliveryIcon className="h-4 w-4" />
-                                  <span>Delivery: {session.deliveryMethod}</span>
-                                </div>
-                              </div>
-                              {session.notes && <p className="pt-1">{session.notes}</p>}
-                              <div className="flex flex-wrap gap-2 pt-2">
-                                <Button variant="outline" onClick={() => handleEditSession(session)} className="rounded-xl">
-                                  Edit session
-                                </Button>
-                                <Button variant="outline" onClick={() => handleDeleteSession(session.id)} className="rounded-xl">
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete session
-                                </Button>
                               </div>
                             </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-            <Card className="rounded-2xl border-slate-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <Upload className="h-5 w-5" />
-                  Import training data
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-slate-600">
-                  Paste JSON or CSV. Required field: <code>date</code> in <code>YYYY-MM-DD</code> format. Recommended fields: <code>title</code>, <code>trainingTopic</code>, <code>entity</code>, <code>startTime</code>, <code>endTime</code>, <code>trainingType</code>, <code>audience</code>, <code>contentType</code>, <code>deliveryMethod</code>, <code>location</code>, <code>facilitator</code>, <code>notes</code>.
-                </p>
-                <Textarea
-                  value={rawImport}
-                  onChange={(e) => setRawImport(e.target.value)}
-                  className="min-h-[220px] rounded-2xl font-mono text-xs"
-                />
-                {importError && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                    {importError}
+              <Card className="rounded-2xl border-slate-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Upload className="h-5 w-5" />
+                    Import training data
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-slate-600">
+                    Paste JSON or CSV. Required field: <code>date</code> in <code>YYYY-MM-DD</code> format. Recommended fields: <code>title</code>, <code>trainingTopic</code>, <code>entity</code>, <code>startTime</code>, <code>endTime</code>, <code>trainingType</code>, <code>audience</code>, <code>contentType</code>, <code>deliveryMethod</code>, <code>location</code>, <code>facilitator</code>, <code>notes</code>.
+                  </p>
+
+                  <Textarea
+                    value={rawImport}
+                    onChange={(e) => setRawImport(e.target.value)}
+                    className="min-h-[220px] rounded-2xl font-mono text-xs"
+                  />
+
+                  {importError && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                      {importError}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={handleImportJson} className="rounded-xl">
+                      Load as JSON
+                    </Button>
+                    <Button variant="outline" onClick={handleImportCsv} className="rounded-xl">
+                      Load as CSV
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setTrainingData(sampleTrainingData);
+                        setImportError("");
+                      }}
+                      className="rounded-xl"
+                    >
+                      Reset sample data
+                    </Button>
                   </div>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  <Button onClick={handleImportJson} className="rounded-xl">
-                    Load as JSON
-                  </Button>
-                  <Button variant="outline" onClick={handleImportCsv} className="rounded-xl">
-                    Load as CSV
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setTrainingData(sampleTrainingData);
-                      setImportError("");
-                    }}
-                    className="rounded-xl"
-                  >
-                    Reset sample data
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </motion.div>
       </div>
     </div>
