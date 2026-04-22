@@ -412,6 +412,7 @@ export default function TrainingCalendarApp() {
   const [customTopic, setCustomTopic] = useState("");
   const [customFacilitator, setCustomFacilitator] = useState("");
   const [editingSessionId, setEditingSessionId] = useState(null);
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
 
   const normalizedData = useMemo(
     () => trainingData.map((item, index) => normalizeTrainingItem(item, index)),
@@ -626,7 +627,10 @@ export default function TrainingCalendarApp() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]"
+          className={cn(
+            "grid gap-4",
+            isRightPanelCollapsed ? "lg:grid-cols-[1fr_auto]" : "lg:grid-cols-[1.4fr_auto_0.9fr]"
+          )}
         >
           <Card className="rounded-2xl shadow-sm border-slate-200">
             <CardHeader className="pb-3">
@@ -852,7 +856,22 @@ export default function TrainingCalendarApp() {
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
+          <div className={cn(
+            "hidden lg:flex items-start justify-center pt-24",
+            isRightPanelCollapsed ? "lg:-ml-2" : "lg:-mx-2"
+          )}>
+            <button
+              type="button"
+              onClick={() => setIsRightPanelCollapsed((current) => !current)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
+              aria-label={isRightPanelCollapsed ? "Expand side panel" : "Collapse side panel"}
+              title={isRightPanelCollapsed ? "Expand side panel" : "Collapse side panel"}
+            >
+              <span className="text-xl font-semibold leading-none">{isRightPanelCollapsed ? "‹" : "›"}</span>
+            </button>
+          </div>
+
+          {!isRightPanelCollapsed && <div className="space-y-4">
             <Card className="rounded-2xl border-slate-200 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-xl">{editingSessionId !== null ? "Edit training session" : "Add training session"}</CardTitle>
@@ -1099,7 +1118,7 @@ export default function TrainingCalendarApp() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </div>}
         </motion.div>
       </div>
     </div>
