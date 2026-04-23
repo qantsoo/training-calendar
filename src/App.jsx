@@ -218,13 +218,7 @@ function normalizeTrainingItem(item, index) {
   };
 }
 
-function CustomDropdown({
-  value,
-  placeholder,
-  options,
-  onSelect,
-  onRemove,
-}) {
+function CustomDropdown({ value, placeholder, options, onSelect, onRemove }) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
 
@@ -234,7 +228,6 @@ function CustomDropdown({
         setIsOpen(false);
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -292,6 +285,25 @@ function CustomDropdown({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function FilterSelect({ icon: Icon, value, onChange, options }) {
+  return (
+    <div className="flex min-w-[150px] items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
+      <Icon className="h-4 w-4 shrink-0" />
+      <select
+        value={value}
+        onChange={onChange}
+        className="min-w-0 flex-1 bg-transparent outline-none"
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -369,7 +381,7 @@ export default function TrainingCalendarApp() {
   }, [normalizedData]);
 
   const facilitatorFilterOptions = useMemo(() => {
-    return ["All", ...new Set(normalizedData.map((item) => item.facilitator).filter(Boolean))];
+    return ["All", ...new Set(normalizedData.map((item) => item.facilitator).filter(Boolean))].sort();
   }, [normalizedData]);
 
   const trainingTopicOptions = useMemo(() => {
@@ -398,8 +410,7 @@ export default function TrainingCalendarApp() {
       const matchesAudience = selectedAudience === "All" || item.audience === selectedAudience;
       const matchesContentType = selectedContentType === "All" || item.contentType === selectedContentType;
       const matchesDeliveryMethod = selectedDeliveryMethod === "All" || item.deliveryMethod === selectedDeliveryMethod;
-      const matchesFacilitator =
-        selectedFacilitator === "All" || item.facilitator === selectedFacilitator;
+      const matchesFacilitator = selectedFacilitator === "All" || item.facilitator === selectedFacilitator;
       const haystack =
         `${item.title} ${item.trainingTopic} ${item.entity} ${item.trainingType} ${item.audience} ${item.contentType} ${item.deliveryMethod} ${item.location} ${item.facilitator} ${item.notes}`.toLowerCase();
       const matchesSearch = haystack.includes(searchTerm.toLowerCase());
@@ -677,9 +688,9 @@ export default function TrainingCalendarApp() {
             isRightPanelCollapsed ? "lg:grid-cols-[1fr_auto]" : "lg:grid-cols-[1.4fr_auto_0.9fr]"
           )}
         >
-          <Card className="rounded-2xl shadow-sm border-slate-200">
+          <Card className="rounded-2xl border-slate-200 shadow-sm">
             <CardHeader className="pb-3">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-2xl">
                     <Calendar className="h-6 w-6" />
@@ -690,8 +701,8 @@ export default function TrainingCalendarApp() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="relative w-full min-w-[220px] md:w-64">
+                <div className="flex w-full max-w-[760px] flex-col gap-3">
+                  <div className="w-full">
                     <Input
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -700,81 +711,37 @@ export default function TrainingCalendarApp() {
                     />
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
-                      <Filter className="h-4 w-4" />
-                      <select
-                        value={selectedTrainingType}
-                        onChange={(e) => setSelectedTrainingType(e.target.value)}
-                        className="max-h-48 bg-transparent outline-none"
-                      >
-                        {trainingTypes.map((type) => (
-                          <option key={type} value={type}>
-                            {type}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
-                      <Users className="h-4 w-4" />
-                      <select
-                        value={selectedAudience}
-                        onChange={(e) => setSelectedAudience(e.target.value)}
-                        className="max-h-48 bg-transparent outline-none"
-                      >
-                        {audienceOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
-                      <BookOpen className="h-4 w-4" />
-                      <select
-                        value={selectedContentType}
-                        onChange={(e) => setSelectedContentType(e.target.value)}
-                        className="max-h-48 bg-transparent outline-none"
-                      >
-                        {contentTypeOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
-                      <Monitor className="h-4 w-4" />
-                      <select
-                        value={selectedDeliveryMethod}
-                        onChange={(e) => setSelectedDeliveryMethod(e.target.value)}
-                        className="max-h-48 bg-transparent outline-none"
-                      >
-                        {deliveryMethodOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
-                      <Briefcase className="h-4 w-4" />
-                      <select
-                        value={selectedFacilitator}
-                        onChange={(e) => setSelectedFacilitator(e.target.value)}
-                        className="max-h-48 bg-transparent outline-none"
-                      >
-                        {facilitatorFilterOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option || "No facilitator"}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    <FilterSelect
+                      icon={Filter}
+                      value={selectedTrainingType}
+                      onChange={(e) => setSelectedTrainingType(e.target.value)}
+                      options={trainingTypes}
+                    />
+                    <FilterSelect
+                      icon={Users}
+                      value={selectedAudience}
+                      onChange={(e) => setSelectedAudience(e.target.value)}
+                      options={audienceOptions}
+                    />
+                    <FilterSelect
+                      icon={BookOpen}
+                      value={selectedContentType}
+                      onChange={(e) => setSelectedContentType(e.target.value)}
+                      options={contentTypeOptions}
+                    />
+                    <FilterSelect
+                      icon={Monitor}
+                      value={selectedDeliveryMethod}
+                      onChange={(e) => setSelectedDeliveryMethod(e.target.value)}
+                      options={deliveryMethodOptions}
+                    />
+                    <FilterSelect
+                      icon={Briefcase}
+                      value={selectedFacilitator}
+                      onChange={(e) => setSelectedFacilitator(e.target.value)}
+                      options={facilitatorFilterOptions}
+                    />
                   </div>
                 </div>
               </div>
@@ -873,8 +840,8 @@ export default function TrainingCalendarApp() {
                       whileHover={{ y: -2 }}
                       onClick={() => setSelectedDate(date)}
                       className={cn(
-                        "min-h-[130px] rounded-2xl border p-2 text-left transition shadow-sm",
-                        inCurrentMonth ? "bg-white border-slate-200" : "bg-slate-100/60 border-slate-200 text-slate-400",
+                        "min-h-[130px] rounded-2xl border p-2 text-left shadow-sm transition",
+                        inCurrentMonth ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-100/60 text-slate-400",
                         isSelected && "ring-2 ring-slate-900",
                         isToday && "border-slate-400"
                       )}
