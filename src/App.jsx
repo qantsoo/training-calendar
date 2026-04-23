@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,8 +26,6 @@ import {
   Wrench,
   Laptop,
   Trash2,
-  PenTool,
-  Wifi,
   Star,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -220,6 +218,84 @@ function normalizeTrainingItem(item, index) {
   };
 }
 
+function CustomDropdown({
+  value,
+  placeholder,
+  options,
+  onSelect,
+  onRemove,
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+      >
+        <span className="truncate">{value || placeholder}</span>
+        <span className={cn("text-slate-400 transition", isOpen && "rotate-180")}>⌄</span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-30 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg">
+          <div className="max-h-48 overflow-y-auto py-1">
+            {options.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-slate-500">No items yet. Add one below.</div>
+            ) : (
+              options.map((option) => (
+                <div
+                  key={option}
+                  className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-slate-50"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelect(option);
+                      setIsOpen(false);
+                    }}
+                    className="flex-1 text-left text-sm text-slate-700"
+                  >
+                    {option}
+                  </button>
+
+                  {onRemove && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove(option);
+                      }}
+                      className="rounded-full px-1 text-slate-400 hover:text-red-600"
+                      aria-label={`Remove ${option}`}
+                      title={`Remove ${option}`}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TrainingCalendarApp() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -228,6 +304,7 @@ export default function TrainingCalendarApp() {
   const [selectedAudience, setSelectedAudience] = useState("All");
   const [selectedContentType, setSelectedContentType] = useState("All");
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState("All");
+  const [selectedFacilitator, setSelectedFacilitator] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [rawImport, setRawImport] = useState(`[
   {
@@ -291,6 +368,10 @@ export default function TrainingCalendarApp() {
     return ["All", ...new Set([...DELIVERY_METHOD_OPTIONS, ...normalizedData.map((item) => item.deliveryMethod)])];
   }, [normalizedData]);
 
+  const facilitatorFilterOptions = useMemo(() => {
+    return ["All", ...new Set(normalizedData.map((item) => item.facilitator).filter(Boolean))];
+  }, [normalizedData]);
+
   const trainingTopicOptions = useMemo(() => {
     return [
       ...new Set([
@@ -317,6 +398,8 @@ export default function TrainingCalendarApp() {
       const matchesAudience = selectedAudience === "All" || item.audience === selectedAudience;
       const matchesContentType = selectedContentType === "All" || item.contentType === selectedContentType;
       const matchesDeliveryMethod = selectedDeliveryMethod === "All" || item.deliveryMethod === selectedDeliveryMethod;
+      const matchesFacilitator =
+        selectedFacilitator === "All" || item.facilitator === selectedFacilitator;
       const haystack =
         `${item.title} ${item.trainingTopic} ${item.entity} ${item.trainingType} ${item.audience} ${item.contentType} ${item.deliveryMethod} ${item.location} ${item.facilitator} ${item.notes}`.toLowerCase();
       const matchesSearch = haystack.includes(searchTerm.toLowerCase());
@@ -326,6 +409,7 @@ export default function TrainingCalendarApp() {
         matchesAudience &&
         matchesContentType &&
         matchesDeliveryMethod &&
+        matchesFacilitator &&
         matchesSearch
       );
     });
@@ -335,6 +419,7 @@ export default function TrainingCalendarApp() {
     selectedAudience,
     selectedContentType,
     selectedDeliveryMethod,
+    selectedFacilitator,
     searchTerm,
   ]);
 
@@ -621,7 +706,7 @@ export default function TrainingCalendarApp() {
                       <select
                         value={selectedTrainingType}
                         onChange={(e) => setSelectedTrainingType(e.target.value)}
-                        className="bg-transparent outline-none"
+                        className="max-h-48 bg-transparent outline-none"
                       >
                         {trainingTypes.map((type) => (
                           <option key={type} value={type}>
@@ -636,7 +721,7 @@ export default function TrainingCalendarApp() {
                       <select
                         value={selectedAudience}
                         onChange={(e) => setSelectedAudience(e.target.value)}
-                        className="bg-transparent outline-none"
+                        className="max-h-48 bg-transparent outline-none"
                       >
                         {audienceOptions.map((option) => (
                           <option key={option} value={option}>
@@ -651,7 +736,7 @@ export default function TrainingCalendarApp() {
                       <select
                         value={selectedContentType}
                         onChange={(e) => setSelectedContentType(e.target.value)}
-                        className="bg-transparent outline-none"
+                        className="max-h-48 bg-transparent outline-none"
                       >
                         {contentTypeOptions.map((option) => (
                           <option key={option} value={option}>
@@ -666,11 +751,26 @@ export default function TrainingCalendarApp() {
                       <select
                         value={selectedDeliveryMethod}
                         onChange={(e) => setSelectedDeliveryMethod(e.target.value)}
-                        className="bg-transparent outline-none"
+                        className="max-h-48 bg-transparent outline-none"
                       >
                         {deliveryMethodOptions.map((option) => (
                           <option key={option} value={option}>
                             {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
+                      <Briefcase className="h-4 w-4" />
+                      <select
+                        value={selectedFacilitator}
+                        onChange={(e) => setSelectedFacilitator(e.target.value)}
+                        className="max-h-48 bg-transparent outline-none"
+                      >
+                        {facilitatorFilterOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option || "No facilitator"}
                           </option>
                         ))}
                       </select>
@@ -856,40 +956,13 @@ export default function TrainingCalendarApp() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2 sm:col-span-2">
                       <Label htmlFor="training-topic">Topic</Label>
-                      <details className="group rounded-xl border border-slate-200 bg-white">
-                        <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm text-slate-700">
-                          <span>{formData.trainingTopic || "Select or add a topic"}</span>
-                          <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
-                        </summary>
-                        <div className="border-t border-slate-100 p-2">
-                          {trainingTopicOptions.length === 0 ? (
-                            <div className="px-2 py-1 text-xs text-slate-500">No topics yet. Add one below.</div>
-                          ) : (
-                            <div className="space-y-1">
-                              {trainingTopicOptions.map((option) => (
-                                <div key={option} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 hover:bg-slate-50">
-                                  <button
-                                    type="button"
-                                    onClick={() => updateFormField("trainingTopic", option)}
-                                    className="flex-1 text-left text-sm text-slate-700"
-                                  >
-                                    {option}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveTopicOption(option)}
-                                    className="rounded-full px-1 text-slate-400 hover:text-red-600"
-                                    aria-label={`Remove ${option}`}
-                                    title={`Remove ${option}`}
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </details>
+                      <CustomDropdown
+                        value={formData.trainingTopic}
+                        placeholder="Select or add a topic"
+                        options={trainingTopicOptions}
+                        onSelect={(option) => updateFormField("trainingTopic", option)}
+                        onRemove={handleRemoveTopicOption}
+                      />
                     </div>
 
                     <div className="space-y-2 sm:col-span-2">
@@ -1029,40 +1102,13 @@ export default function TrainingCalendarApp() {
 
                     <div className="space-y-2">
                       <Label htmlFor="facilitator">Facilitator</Label>
-                      <details className="group rounded-xl border border-slate-200 bg-white">
-                        <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm text-slate-700">
-                          <span>{formData.facilitator || "Select or add a facilitator"}</span>
-                          <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
-                        </summary>
-                        <div className="border-t border-slate-100 p-2">
-                          {facilitatorOptions.length === 0 ? (
-                            <div className="px-2 py-1 text-xs text-slate-500">No facilitators yet. Add one below.</div>
-                          ) : (
-                            <div className="space-y-1">
-                              {facilitatorOptions.map((option) => (
-                                <div key={option} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 hover:bg-slate-50">
-                                  <button
-                                    type="button"
-                                    onClick={() => updateFormField("facilitator", option)}
-                                    className="flex-1 text-left text-sm text-slate-700"
-                                  >
-                                    {option}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveFacilitatorOption(option)}
-                                    className="rounded-full px-1 text-slate-400 hover:text-red-600"
-                                    aria-label={`Remove ${option}`}
-                                    title={`Remove ${option}`}
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </details>
+                      <CustomDropdown
+                        value={formData.facilitator}
+                        placeholder="Select or add a facilitator"
+                        options={facilitatorOptions}
+                        onSelect={(option) => updateFormField("facilitator", option)}
+                        onRemove={handleRemoveFacilitatorOption}
+                      />
                     </div>
 
                     <div className="space-y-2">
