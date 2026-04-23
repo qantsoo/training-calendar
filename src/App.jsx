@@ -127,19 +127,71 @@ function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
+function splitCsvLine(line, delimiter) {
+  const values = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === delimiter && !inQuotes) {
+      values.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  values.push(current.trim());
+  return values.map((value) => value.replace(/^"(.*)"$/, "$1").trim());
+}
+
+function detectCsvDelimiter(lines) {
+  const sampleLine = lines.find((line) => line.trim());
+  if (!sampleLine) return ",";
+
+  const commaCount = (sampleLine.match(/,/g) || []).length;
+  const semicolonCount = (sampleLine.match(/;/g) || []).length;
+
+  return semicolonCount > commaCount ? ";" : ",";
+}
+
 function parseCsv(text) {
-  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+  const lines = text
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
   if (lines.length < 2) return [];
 
-  const headers = lines[0].split(",").map((h) => h.trim());
-  return lines.slice(1).map((line, index) => {
-    const values = line.split(",").map((v) => v.trim());
-    const entry = { id: Date.now() + index };
-    headers.forEach((header, i) => {
-      entry[header] = values[i] ?? "";
-    });
-    return entry;
-  });
+  const delimiter = detectCsvDelimiter(lines);
+  const headers = splitCsvLine(lines[0], delimiter).map((header) => header.trim());
+
+  return lines
+    .slice(1)
+    .map((line, index) => {
+      const values = splitCsvLine(line, delimiter);
+      const hasAnyRealValue = values.some((value) => value !== "");
+      if (!hasAnyRealValue) return null;
+
+      const entry = { id: Date.now() + index };
+      headers.forEach((header, i) => {
+        entry[header] = values[i] ?? "";
+      });
+
+      return entry;
+    })
+    .filter(Boolean);
 }
 
 function formatMonthYear(date) {
@@ -161,12 +213,12 @@ function getMonthGrid(currentDate) {
 
   const cells = [];
 
-  for (let i = 0; i < startDay; i++) {
+  for (let i = 0; i < startDay; i += 1) {
     const d = new Date(year, month, -(startDay - 1 - i));
     cells.push({ date: d, inCurrentMonth: false });
   }
 
-  for (let day = 1; day <= daysInMonth; day++) {
+  for (let day = 1; day <= daysInMonth; day += 1) {
     cells.push({ date: new Date(year, month, day), inCurrentMonth: true });
   }
 
@@ -228,6 +280,7 @@ function CustomDropdown({ value, placeholder, options, onSelect, onRemove }) {
         setIsOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -289,21 +342,24 @@ function CustomDropdown({ value, placeholder, options, onSelect, onRemove }) {
   );
 }
 
-function FilterSelect({ icon: Icon, value, onChange, options }) {
+function FilterSelect({ icon: Icon, label, value, onChange, options }) {
   return (
-    <div className="flex min-w-[150px] items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
+    <div className="flex min-w-[180px] items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-slate-600">
       <Icon className="h-4 w-4 shrink-0" />
-      <select
-        value={value}
-        onChange={onChange}
-        className="min-w-0 flex-1 bg-transparent outline-none"
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
+        <select
+          value={value}
+          onChange={onChange}
+          className="w-full min-w-0 bg-transparent text-sm outline-none"
+        >
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }
@@ -318,24 +374,10 @@ export default function TrainingCalendarApp() {
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState("All");
   const [selectedFacilitator, setSelectedFacilitator] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-  const [rawImport, setRawImport] = useState(`[
-  {
-    "title": "Nursery induction",
-    "date": "2026-04-24",
-    "startTime": "09:00",
-    "endTime": "10:30",
-    "trainingType": "Nursery",
-    "trainingTopic": "Induction",
-    "entity": "Green Academy",
-    "audience": "Internal - Team",
-    "contentType": "Theory",
-    "deliveryMethod": "Online",
-    "location": "Teams",
-    "facilitator": "Amina",
-    "notes": "Monthly induction session"
-  }
-]`);
+  const [rawImport, setRawImport] = useState("");
   const [importError, setImportError] = useState("");
+  const [importSuccess, setImportSuccess] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     trainingTopic: "",
@@ -481,6 +523,157 @@ export default function TrainingCalendarApp() {
     setTrainingData(data || []);
   }
 
+  function makeSessionFingerprint(item) {
+    const normalized = normalizeTrainingItem(item, 0);
+
+    return [
+      normalized.date?.trim() || "",
+      normalized.startTime?.trim() || "",
+      normalized.endTime?.trim() || "",
+      normalized.trainingTopic?.trim().toLowerCase() || "",
+      normalized.entity?.trim().toLowerCase() || "",
+      normalized.facilitator?.trim().toLowerCase() || "",
+    ].join("||");
+  }
+
+  function makePreparedSession(item) {
+    const normalized = normalizeTrainingItem(item, 0);
+
+    return {
+      title: (normalized.trainingTopic || normalized.title || "").trim(),
+      training_topic: (normalized.trainingTopic || normalized.title || "").trim(),
+      entity: (normalized.entity || "").trim(),
+      session_date: normalized.date || "",
+      start_time: normalized.startTime || "",
+      end_time: normalized.endTime || "",
+      training_type: normalized.trainingType || "Nursery",
+      audience: normalized.audience || "Internal - Team",
+      content_type: normalized.contentType || "Theory",
+      delivery_method: normalized.deliveryMethod || "Online",
+      location: (normalized.location || "").trim(),
+      facilitator: (normalized.facilitator || "").trim(),
+      notes: (normalized.notes || "").trim(),
+    };
+  }
+
+  async function importSessionsToSupabase(importedRows) {
+    const cleanedRows = importedRows
+      .map(makePreparedSession)
+      .filter((row) => row.training_topic && row.session_date);
+
+    if (!cleanedRows.length) {
+      throw new Error("No valid rows found to import.");
+    }
+
+    const { data: existingRows, error: fetchError } = await supabase
+      .from("training_sessions")
+      .select("*");
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    const existingByFingerprint = new Map(
+      (existingRows || []).map((row) => [makeSessionFingerprint(row), row])
+    );
+
+    let inserted = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const row of cleanedRows) {
+      const fingerprint = makeSessionFingerprint(row);
+      const existing = existingByFingerprint.get(fingerprint);
+
+      if (!existing) {
+        const { data: insertedRows, error } = await supabase
+          .from("training_sessions")
+          .insert([row])
+          .select();
+
+        if (error) {
+          throw error;
+        }
+
+        if (insertedRows?.[0]) {
+          existingByFingerprint.set(fingerprint, insertedRows[0]);
+        }
+        inserted += 1;
+        continue;
+      }
+
+      const existingPrepared = makePreparedSession(existing);
+
+      const hasChanges =
+        existingPrepared.title !== row.title ||
+        existingPrepared.training_topic !== row.training_topic ||
+        existingPrepared.entity !== row.entity ||
+        existingPrepared.session_date !== row.session_date ||
+        existingPrepared.start_time !== row.start_time ||
+        existingPrepared.end_time !== row.end_time ||
+        existingPrepared.training_type !== row.training_type ||
+        existingPrepared.audience !== row.audience ||
+        existingPrepared.content_type !== row.content_type ||
+        existingPrepared.delivery_method !== row.delivery_method ||
+        existingPrepared.location !== row.location ||
+        existingPrepared.facilitator !== row.facilitator ||
+        existingPrepared.notes !== row.notes;
+
+      if (!hasChanges) {
+        skipped += 1;
+        continue;
+      }
+
+      const { data: updatedRows, error } = await supabase
+        .from("training_sessions")
+        .update(row)
+        .eq("id", existing.id)
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      if (updatedRows?.[0]) {
+        existingByFingerprint.set(fingerprint, updatedRows[0]);
+      }
+
+      updated += 1;
+    }
+
+    return { inserted, updated, skipped, total: cleanedRows.length };
+  }
+
+  async function processImportedRows(rows) {
+    setImportError("");
+    setImportSuccess("");
+    setIsImporting(true);
+
+    try {
+      const result = await importSessionsToSupabase(rows);
+      await fetchSessions();
+
+      const firstDate =
+        rows[0]?.date ??
+        rows[0]?.session_date ??
+        normalizeTrainingItem(rows[0] || {}, 0).date;
+
+      if (firstDate) {
+        setSelectedDate(fromDateKey(firstDate));
+        setCurrentMonth(fromDateKey(firstDate));
+      }
+
+      setImportSuccess(
+        `Import complete: ${result.inserted} added, ${result.updated} updated, ${result.skipped} unchanged.`
+      );
+    } catch (error) {
+      console.error("Import error:", error);
+      setImportError(error.message || "Could not import the data.");
+    } finally {
+      setIsImporting(false);
+    }
+  }
+
   function handlePrevMonth() {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   }
@@ -497,28 +690,59 @@ export default function TrainingCalendarApp() {
     fetchSessions();
   }, []);
 
-  function handleImportJson() {
+  async function handleImportJson() {
     try {
       const parsed = JSON.parse(rawImport);
       if (!Array.isArray(parsed)) throw new Error("JSON must be an array of session objects.");
-      setTrainingData(parsed);
-      setImportError("");
-      if (parsed[0]?.date) setSelectedDate(fromDateKey(parsed[0].date));
+      await processImportedRows(parsed);
     } catch (error) {
       setImportError(error.message || "Could not parse JSON.");
     }
   }
 
-  function handleImportCsv() {
+  async function handleImportCsv() {
     try {
       const parsed = parseCsv(rawImport);
       if (!parsed.length) throw new Error("CSV appears empty or invalid.");
-      setTrainingData(parsed);
-      setImportError("");
-      if (parsed[0]?.date) setSelectedDate(fromDateKey(parsed[0].date));
+      await processImportedRows(parsed);
     } catch (error) {
       setImportError(error.message || "Could not parse CSV.");
     }
+  }
+
+  function handleCsvFileUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportError("");
+    setImportSuccess("");
+
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      const text = e.target?.result;
+      if (typeof text !== "string") {
+        setImportError("Could not read the CSV file.");
+        return;
+      }
+
+      setRawImport(text);
+
+      try {
+        const parsed = parseCsv(text);
+        if (!parsed.length) throw new Error("CSV appears empty or invalid.");
+        await processImportedRows(parsed);
+      } catch (error) {
+        setImportError(error.message || "Could not parse or import the CSV file.");
+      }
+    };
+
+    reader.onerror = () => {
+      setImportError("Could not read the CSV file.");
+    };
+
+    reader.readAsText(file);
+    event.target.value = "";
   }
 
   function updateFormField(field, value) {
@@ -714,30 +938,35 @@ export default function TrainingCalendarApp() {
                   <div className="flex flex-wrap gap-2">
                     <FilterSelect
                       icon={Filter}
+                      label="Type"
                       value={selectedTrainingType}
                       onChange={(e) => setSelectedTrainingType(e.target.value)}
                       options={trainingTypes}
                     />
                     <FilterSelect
                       icon={Users}
+                      label="Audience"
                       value={selectedAudience}
                       onChange={(e) => setSelectedAudience(e.target.value)}
                       options={audienceOptions}
                     />
                     <FilterSelect
                       icon={BookOpen}
+                      label="Content"
                       value={selectedContentType}
                       onChange={(e) => setSelectedContentType(e.target.value)}
                       options={contentTypeOptions}
                     />
                     <FilterSelect
                       icon={Monitor}
+                      label="Delivery"
                       value={selectedDeliveryMethod}
                       onChange={(e) => setSelectedDeliveryMethod(e.target.value)}
                       options={deliveryMethodOptions}
                     />
                     <FilterSelect
                       icon={Briefcase}
+                      label="Facilitator"
                       value={selectedFacilitator}
                       onChange={(e) => setSelectedFacilitator(e.target.value)}
                       options={facilitatorFilterOptions}
@@ -1265,13 +1494,25 @@ export default function TrainingCalendarApp() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-slate-600">
-                    Paste JSON or CSV. Required field: <code>date</code> in <code>YYYY-MM-DD</code> format. Recommended fields: <code>title</code>, <code>trainingTopic</code>, <code>entity</code>, <code>startTime</code>, <code>endTime</code>, <code>trainingType</code>, <code>audience</code>, <code>contentType</code>, <code>deliveryMethod</code>, <code>location</code>, <code>facilitator</code>, <code>notes</code>.
+                    Upload a CSV file directly, or paste CSV / JSON below. CSV can use commas or semicolons. Existing matching sessions are updated instead of duplicated.
                   </p>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="csv-file">Upload CSV file</Label>
+                    <Input
+                      id="csv-file"
+                      type="file"
+                      accept=".csv,text/csv"
+                      onChange={handleCsvFileUpload}
+                      className="rounded-xl"
+                    />
+                  </div>
 
                   <Textarea
                     value={rawImport}
                     onChange={(e) => setRawImport(e.target.value)}
                     className="min-h-[220px] rounded-2xl font-mono text-xs"
+                    placeholder="Paste CSV or JSON here if you do not want to upload a file"
                   />
 
                   {importError && (
@@ -1280,18 +1521,25 @@ export default function TrainingCalendarApp() {
                     </div>
                   )}
 
+                  {importSuccess && (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                      {importSuccess}
+                    </div>
+                  )}
+
                   <div className="flex flex-wrap gap-2">
-                    <Button onClick={handleImportJson} className="rounded-xl">
-                      Load as JSON
+                    <Button onClick={handleImportJson} className="rounded-xl" disabled={isImporting}>
+                      {isImporting ? "Importing..." : "Load as JSON"}
                     </Button>
-                    <Button variant="outline" onClick={handleImportCsv} className="rounded-xl">
-                      Load as CSV
+                    <Button variant="outline" onClick={handleImportCsv} className="rounded-xl" disabled={isImporting}>
+                      {isImporting ? "Importing..." : "Load as CSV"}
                     </Button>
                     <Button
                       variant="ghost"
                       onClick={() => {
                         setTrainingData(sampleTrainingData);
                         setImportError("");
+                        setImportSuccess("");
                       }}
                       className="rounded-xl"
                     >
