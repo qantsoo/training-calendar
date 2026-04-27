@@ -39,78 +39,37 @@ const DEFAULT_FACILITATORS = [];
 const sampleTrainingData = [];
 
 const trainingTypeStyles = {
-  Nursery: {
-    badge: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    soft: "bg-emerald-50 border-emerald-200",
-    accent: "bg-emerald-500",
-    text: "text-emerald-900",
-  },
-  Projects: {
-    badge: "bg-blue-100 text-blue-800 border-blue-200",
-    soft: "bg-blue-50 border-blue-200",
-    accent: "bg-blue-500",
-    text: "text-blue-900",
-  },
-  "Special Requests": {
-    badge: "bg-amber-100 text-amber-800 border-amber-200",
-    soft: "bg-amber-50 border-amber-200",
-    accent: "bg-amber-500",
-    text: "text-amber-900",
-  },
-  GreenLink: {
-    badge: "bg-cyan-100 text-cyan-800 border-cyan-200",
-    soft: "bg-cyan-50 border-cyan-200",
-    accent: "bg-cyan-500",
-    text: "text-cyan-900",
-  },
-  TMO: {
-    badge: "bg-violet-100 text-violet-800 border-violet-200",
-    soft: "bg-violet-50 border-violet-200",
-    accent: "bg-violet-500",
-    text: "text-violet-900",
-  },
-  Default: {
-    badge: "bg-slate-100 text-slate-800 border-slate-200",
-    soft: "bg-slate-50 border-slate-200",
-    accent: "bg-slate-400",
-    text: "text-slate-900",
-  },
+  Nursery: { badge: "bg-emerald-100 text-emerald-800 border-emerald-200", soft: "bg-emerald-50 border-emerald-200", accent: "bg-emerald-500", text: "text-emerald-900" },
+  Projects: { badge: "bg-blue-100 text-blue-800 border-blue-200", soft: "bg-blue-50 border-blue-200", accent: "bg-blue-500", text: "text-blue-900" },
+  "Special Requests": { badge: "bg-amber-100 text-amber-800 border-amber-200", soft: "bg-amber-50 border-amber-200", accent: "bg-amber-500", text: "text-amber-900" },
+  GreenLink: { badge: "bg-cyan-100 text-cyan-800 border-cyan-200", soft: "bg-cyan-50 border-cyan-200", accent: "bg-cyan-500", text: "text-cyan-900" },
+  TMO: { badge: "bg-violet-100 text-violet-800 border-violet-200", soft: "bg-violet-50 border-violet-200", accent: "bg-violet-500", text: "text-violet-900" },
+  Default: { badge: "bg-slate-100 text-slate-800 border-slate-200", soft: "bg-slate-50 border-slate-200", accent: "bg-slate-400", text: "text-slate-900" },
 };
 
 function getAudienceMeta(audience) {
   switch (audience) {
-    case "Internal - Team":
-      return { icon: Briefcase, label: "Internal Team" };
-    case "Internal - Teacher Training (TT)":
-      return { icon: GraduationCap, label: "Teacher Training" };
-    case "External":
-      return { icon: Globe, label: "External" };
-    default:
-      return { icon: Users, label: audience || "Audience" };
+    case "Internal - Team": return { icon: Briefcase, label: "Internal Team" };
+    case "Internal - Teacher Training (TT)": return { icon: GraduationCap, label: "Teacher Training" };
+    case "External": return { icon: Globe, label: "External" };
+    default: return { icon: Users, label: audience || "Audience" };
   }
 }
 
 function getContentMeta(contentType) {
   switch (contentType) {
-    case "Theory":
-      return { icon: BookOpen, label: "Theory" };
-    case "Practical":
-      return { icon: Wrench, label: "Practical" };
-    case "Hybrid":
-      return { icon: Star, label: "Hybrid" };
-    default:
-      return { icon: Layers3, label: contentType || "Content" };
+    case "Theory": return { icon: BookOpen, label: "Theory" };
+    case "Practical": return { icon: Wrench, label: "Practical" };
+    case "Hybrid": return { icon: Star, label: "Hybrid" };
+    default: return { icon: Layers3, label: contentType || "Content" };
   }
 }
 
 function getDeliveryMeta(deliveryMethod) {
   switch (deliveryMethod) {
-    case "Online":
-      return { icon: Laptop, label: "Online" };
-    case "Onsite":
-      return { icon: Building2, label: "Onsite" };
-    default:
-      return { icon: Monitor, label: deliveryMethod || "Delivery" };
+    case "Online": return { icon: Laptop, label: "Online" };
+    case "Onsite": return { icon: Building2, label: "Onsite" };
+    default: return { icon: Monitor, label: deliveryMethod || "Delivery" };
   }
 }
 
@@ -158,10 +117,8 @@ function splitCsvLine(line, delimiter) {
 function detectCsvDelimiter(lines) {
   const sampleLine = lines.find((line) => line.trim());
   if (!sampleLine) return ",";
-
   const commaCount = (sampleLine.match(/,/g) || []).length;
   const semicolonCount = (sampleLine.match(/;/g) || []).length;
-
   return semicolonCount > commaCount ? ";" : ",";
 }
 
@@ -181,14 +138,12 @@ function parseCsv(text) {
     .slice(1)
     .map((line, index) => {
       const values = splitCsvLine(line, delimiter);
-      const hasAnyRealValue = values.some((value) => value !== "");
-      if (!hasAnyRealValue) return null;
+      if (!values.some((value) => value !== "")) return null;
 
       const entry = { id: Date.now() + index };
       headers.forEach((header, i) => {
         entry[header] = values[i] ?? "";
       });
-
       return entry;
     })
     .filter(Boolean);
@@ -205,17 +160,14 @@ function formatDayLabel(date) {
 function getMonthGrid(currentDate) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-
   const firstOfMonth = new Date(year, month, 1);
   const lastOfMonth = new Date(year, month + 1, 0);
   const startDay = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = lastOfMonth.getDate();
-
   const cells = [];
 
   for (let i = 0; i < startDay; i += 1) {
-    const d = new Date(year, month, -(startDay - 1 - i));
-    cells.push({ date: d, inCurrentMonth: false });
+    cells.push({ date: new Date(year, month, -(startDay - 1 - i)), inCurrentMonth: false });
   }
 
   for (let day = 1; day <= daysInMonth; day += 1) {
@@ -223,19 +175,17 @@ function getMonthGrid(currentDate) {
   }
 
   while (cells.length % 7 !== 0) {
-    const d = new Date(year, month + 1, cells.length - (startDay + daysInMonth) + 1);
-    cells.push({ date: d, inCurrentMonth: false });
+    cells.push({
+      date: new Date(year, month + 1, cells.length - (startDay + daysInMonth) + 1),
+      inCurrentMonth: false,
+    });
   }
 
   return cells;
 }
 
 function isSameDay(a, b) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 function toDateKey(date) {
@@ -276,9 +226,7 @@ function CustomDropdown({ value, placeholder, options, onSelect, onRemove }) {
 
   React.useEffect(() => {
     function handleClickOutside(event) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsOpen(false);
     }
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -303,10 +251,7 @@ function CustomDropdown({ value, placeholder, options, onSelect, onRemove }) {
               <div className="px-3 py-2 text-xs text-slate-500">No items yet. Add one below.</div>
             ) : (
               options.map((option) => (
-                <div
-                  key={option}
-                  className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-slate-50"
-                >
+                <div key={option} className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-slate-50">
                   <button
                     type="button"
                     onClick={() => {
@@ -326,8 +271,6 @@ function CustomDropdown({ value, placeholder, options, onSelect, onRemove }) {
                         onRemove(option);
                       }}
                       className="rounded-full px-1 text-slate-400 hover:text-red-600"
-                      aria-label={`Remove ${option}`}
-                      title={`Remove ${option}`}
                     >
                       ×
                     </button>
@@ -348,11 +291,7 @@ function FilterSelect({ icon: Icon, label, value, onChange, options }) {
       <Icon className="h-4 w-4 shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
-        <select
-          value={value}
-          onChange={onChange}
-          className="w-full min-w-0 bg-transparent text-sm outline-none"
-        >
+        <select value={value} onChange={onChange} className="w-full min-w-0 bg-transparent text-sm outline-none">
           {options.map((option) => (
             <option key={option} value={option}>
               {option}
@@ -378,6 +317,7 @@ export default function TrainingCalendarApp() {
   const [importError, setImportError] = useState("");
   const [importSuccess, setImportSuccess] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+
   const [formData, setFormData] = useState({
     title: "",
     trainingTopic: "",
@@ -393,6 +333,7 @@ export default function TrainingCalendarApp() {
     facilitator: "",
     notes: "",
   });
+
   const [formError, setFormError] = useState("");
   const [customTopic, setCustomTopic] = useState("");
   const [customFacilitator, setCustomFacilitator] = useState("");
@@ -401,49 +342,20 @@ export default function TrainingCalendarApp() {
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
 
-  const normalizedData = useMemo(
-    () => trainingData.map((item, index) => normalizeTrainingItem(item, index)),
-    [trainingData]
-  );
+  const normalizedData = useMemo(() => trainingData.map((item, index) => normalizeTrainingItem(item, index)), [trainingData]);
 
-  const trainingTypes = useMemo(() => {
-    return ["All", ...new Set([...TRAINING_TYPE_OPTIONS, ...normalizedData.map((item) => item.trainingType)])];
-  }, [normalizedData]);
-
-  const audienceOptions = useMemo(() => {
-    return ["All", ...new Set([...AUDIENCE_OPTIONS, ...normalizedData.map((item) => item.audience)])];
-  }, [normalizedData]);
-
-  const contentTypeOptions = useMemo(() => {
-    return ["All", ...new Set([...CONTENT_TYPE_OPTIONS, ...normalizedData.map((item) => item.contentType)])];
-  }, [normalizedData]);
-
-  const deliveryMethodOptions = useMemo(() => {
-    return ["All", ...new Set([...DELIVERY_METHOD_OPTIONS, ...normalizedData.map((item) => item.deliveryMethod)])];
-  }, [normalizedData]);
-
-  const facilitatorFilterOptions = useMemo(() => {
-    return ["All", ...new Set(normalizedData.map((item) => item.facilitator).filter(Boolean))].sort();
-  }, [normalizedData]);
+  const trainingTypes = useMemo(() => ["All", ...new Set([...TRAINING_TYPE_OPTIONS, ...normalizedData.map((item) => item.trainingType)])], [normalizedData]);
+  const audienceOptions = useMemo(() => ["All", ...new Set([...AUDIENCE_OPTIONS, ...normalizedData.map((item) => item.audience)])], [normalizedData]);
+  const contentTypeOptions = useMemo(() => ["All", ...new Set([...CONTENT_TYPE_OPTIONS, ...normalizedData.map((item) => item.contentType)])], [normalizedData]);
+  const deliveryMethodOptions = useMemo(() => ["All", ...new Set([...DELIVERY_METHOD_OPTIONS, ...normalizedData.map((item) => item.deliveryMethod)])], [normalizedData]);
+  const facilitatorFilterOptions = useMemo(() => ["All", ...new Set(normalizedData.map((item) => item.facilitator).filter(Boolean))].sort(), [normalizedData]);
 
   const trainingTopicOptions = useMemo(() => {
-    return [
-      ...new Set([
-        ...DEFAULT_TRAINING_TOPICS,
-        ...customTopicOptions,
-        ...normalizedData.map((item) => item.trainingTopic).filter(Boolean),
-      ]),
-    ].sort();
+    return [...new Set([...DEFAULT_TRAINING_TOPICS, ...customTopicOptions, ...normalizedData.map((item) => item.trainingTopic).filter(Boolean)])].sort();
   }, [normalizedData, customTopicOptions]);
 
   const facilitatorOptions = useMemo(() => {
-    return [
-      ...new Set([
-        ...DEFAULT_FACILITATORS,
-        ...customFacilitatorOptions,
-        ...normalizedData.map((item) => item.facilitator).filter(Boolean),
-      ]),
-    ].sort();
+    return [...new Set([...DEFAULT_FACILITATORS, ...customFacilitatorOptions, ...normalizedData.map((item) => item.facilitator).filter(Boolean)])].sort();
   }, [normalizedData, customFacilitatorOptions]);
 
   const filteredData = useMemo(() => {
@@ -453,28 +365,12 @@ export default function TrainingCalendarApp() {
       const matchesContentType = selectedContentType === "All" || item.contentType === selectedContentType;
       const matchesDeliveryMethod = selectedDeliveryMethod === "All" || item.deliveryMethod === selectedDeliveryMethod;
       const matchesFacilitator = selectedFacilitator === "All" || item.facilitator === selectedFacilitator;
-      const haystack =
-        `${item.title} ${item.trainingTopic} ${item.entity} ${item.trainingType} ${item.audience} ${item.contentType} ${item.deliveryMethod} ${item.location} ${item.facilitator} ${item.notes}`.toLowerCase();
+      const haystack = `${item.title} ${item.trainingTopic} ${item.entity} ${item.trainingType} ${item.audience} ${item.contentType} ${item.deliveryMethod} ${item.location} ${item.facilitator} ${item.notes}`.toLowerCase();
       const matchesSearch = haystack.includes(searchTerm.toLowerCase());
 
-      return (
-        matchesTrainingType &&
-        matchesAudience &&
-        matchesContentType &&
-        matchesDeliveryMethod &&
-        matchesFacilitator &&
-        matchesSearch
-      );
+      return matchesTrainingType && matchesAudience && matchesContentType && matchesDeliveryMethod && matchesFacilitator && matchesSearch;
     });
-  }, [
-    normalizedData,
-    selectedTrainingType,
-    selectedAudience,
-    selectedContentType,
-    selectedDeliveryMethod,
-    selectedFacilitator,
-    searchTerm,
-  ]);
+  }, [normalizedData, selectedTrainingType, selectedAudience, selectedContentType, selectedDeliveryMethod, selectedFacilitator, searchTerm]);
 
   const sessionsByDate = useMemo(() => {
     return filteredData.reduce((acc, item) => {
@@ -485,10 +381,7 @@ export default function TrainingCalendarApp() {
     }, {});
   }, [filteredData]);
 
-  const selectedSessions = useMemo(() => {
-    return sessionsByDate[toDateKey(selectedDate)] ?? [];
-  }, [sessionsByDate, selectedDate]);
-
+  const selectedSessions = useMemo(() => sessionsByDate[toDateKey(selectedDate)] ?? [], [sessionsByDate, selectedDate]);
   const totalSessions = filteredData.length;
 
   const trainingTypeCounts = useMemo(() => {
@@ -510,10 +403,7 @@ export default function TrainingCalendarApp() {
   const today = new Date();
 
   async function fetchSessions() {
-    const { data, error } = await supabase
-      .from("training_sessions")
-      .select("*")
-      .order("session_date", { ascending: true });
+    const { data, error } = await supabase.from("training_sessions").select("*").order("session_date", { ascending: true });
 
     if (error) {
       console.error("Error fetching sessions:", error);
@@ -521,19 +411,6 @@ export default function TrainingCalendarApp() {
     }
 
     setTrainingData(data || []);
-  }
-
-  function makeSessionFingerprint(item) {
-    const normalized = normalizeTrainingItem(item, 0);
-
-    return [
-      normalized.date?.trim() || "",
-      normalized.startTime?.trim() || "",
-      normalized.endTime?.trim() || "",
-      normalized.trainingTopic?.trim().toLowerCase() || "",
-      normalized.entity?.trim().toLowerCase() || "",
-      normalized.facilitator?.trim().toLowerCase() || "",
-    ].join("||");
   }
 
   function makePreparedSession(item) {
@@ -556,92 +433,31 @@ export default function TrainingCalendarApp() {
     };
   }
 
-  async function importSessionsToSupabase(importedRows) {
-    const cleanedRows = importedRows
-      .map(makePreparedSession)
-      .filter((row) => row.training_topic && row.session_date);
+  async function replaceAllSessionsFromImport(importedRows) {
+    const cleanedRows = importedRows.map(makePreparedSession).filter((row) => row.training_topic && row.session_date);
 
     if (!cleanedRows.length) {
       throw new Error("No valid rows found to import.");
     }
 
-    const { data: existingRows, error: fetchError } = await supabase
+    const { error: deleteError } = await supabase
       .from("training_sessions")
-      .select("*");
+      .delete()
+      .not("id", "is", null);
 
-    if (fetchError) {
-      throw fetchError;
+    if (deleteError) {
+      throw deleteError;
     }
 
-    const existingByFingerprint = new Map(
-      (existingRows || []).map((row) => [makeSessionFingerprint(row), row])
-    );
+    const { error: insertError } = await supabase
+      .from("training_sessions")
+      .insert(cleanedRows);
 
-    let inserted = 0;
-    let updated = 0;
-    let skipped = 0;
-
-    for (const row of cleanedRows) {
-      const fingerprint = makeSessionFingerprint(row);
-      const existing = existingByFingerprint.get(fingerprint);
-
-      if (!existing) {
-        const { data: insertedRows, error } = await supabase
-          .from("training_sessions")
-          .insert([row])
-          .select();
-
-        if (error) {
-          throw error;
-        }
-
-        if (insertedRows?.[0]) {
-          existingByFingerprint.set(fingerprint, insertedRows[0]);
-        }
-        inserted += 1;
-        continue;
-      }
-
-      const existingPrepared = makePreparedSession(existing);
-
-      const hasChanges =
-        existingPrepared.title !== row.title ||
-        existingPrepared.training_topic !== row.training_topic ||
-        existingPrepared.entity !== row.entity ||
-        existingPrepared.session_date !== row.session_date ||
-        existingPrepared.start_time !== row.start_time ||
-        existingPrepared.end_time !== row.end_time ||
-        existingPrepared.training_type !== row.training_type ||
-        existingPrepared.audience !== row.audience ||
-        existingPrepared.content_type !== row.content_type ||
-        existingPrepared.delivery_method !== row.delivery_method ||
-        existingPrepared.location !== row.location ||
-        existingPrepared.facilitator !== row.facilitator ||
-        existingPrepared.notes !== row.notes;
-
-      if (!hasChanges) {
-        skipped += 1;
-        continue;
-      }
-
-      const { data: updatedRows, error } = await supabase
-        .from("training_sessions")
-        .update(row)
-        .eq("id", existing.id)
-        .select();
-
-      if (error) {
-        throw error;
-      }
-
-      if (updatedRows?.[0]) {
-        existingByFingerprint.set(fingerprint, updatedRows[0]);
-      }
-
-      updated += 1;
+    if (insertError) {
+      throw insertError;
     }
 
-    return { inserted, updated, skipped, total: cleanedRows.length };
+    return { total: cleanedRows.length };
   }
 
   async function processImportedRows(rows) {
@@ -650,22 +466,16 @@ export default function TrainingCalendarApp() {
     setIsImporting(true);
 
     try {
-      const result = await importSessionsToSupabase(rows);
+      const result = await replaceAllSessionsFromImport(rows);
       await fetchSessions();
 
-      const firstDate =
-        rows[0]?.date ??
-        rows[0]?.session_date ??
-        normalizeTrainingItem(rows[0] || {}, 0).date;
-
+      const firstDate = rows[0]?.date ?? rows[0]?.session_date ?? normalizeTrainingItem(rows[0] || {}, 0).date;
       if (firstDate) {
         setSelectedDate(fromDateKey(firstDate));
         setCurrentMonth(fromDateKey(firstDate));
       }
 
-      setImportSuccess(
-        `Import complete: ${result.inserted} added, ${result.updated} updated, ${result.skipped} unchanged.`
-      );
+      setImportSuccess(`Import complete: calendar replaced with ${result.total} sessions from the CSV.`);
     } catch (error) {
       console.error("Import error:", error);
       setImportError(error.message || "Could not import the data.");
@@ -737,10 +547,7 @@ export default function TrainingCalendarApp() {
       }
     };
 
-    reader.onerror = () => {
-      setImportError("Could not read the CSV file.");
-    };
-
+    reader.onerror = () => setImportError("Could not read the CSV file.");
     reader.readAsText(file);
     event.target.value = "";
   }
@@ -798,26 +605,13 @@ export default function TrainingCalendarApp() {
       notes: formData.notes.trim(),
     };
 
-    let error;
+    const result = editingSessionId !== null
+      ? await supabase.from("training_sessions").update(preparedSession).eq("id", editingSessionId)
+      : await supabase.from("training_sessions").insert([preparedSession]);
 
-    if (editingSessionId !== null) {
-      const result = await supabase
-        .from("training_sessions")
-        .update(preparedSession)
-        .eq("id", editingSessionId);
-
-      error = result.error;
-    } else {
-      const result = await supabase
-        .from("training_sessions")
-        .insert([preparedSession]);
-
-      error = result.error;
-    }
-
-    if (error) {
-      console.error("Error saving session:", error);
-      setFormError(error.message || "Error saving session.");
+    if (result.error) {
+      console.error("Error saving session:", result.error);
+      setFormError(result.error.message || "Error saving session.");
       return;
     }
 
@@ -828,10 +622,7 @@ export default function TrainingCalendarApp() {
   }
 
   async function handleDeleteSession(sessionId) {
-    const { error } = await supabase
-      .from("training_sessions")
-      .delete()
-      .eq("id", sessionId);
+    const { error } = await supabase.from("training_sessions").delete().eq("id", sessionId);
 
     if (error) {
       console.error("Error deleting session:", error);
@@ -877,28 +668,20 @@ export default function TrainingCalendarApp() {
 
   function handleRemoveTopicOption(topicToRemove) {
     setCustomTopicOptions((current) => current.filter((topic) => topic !== topicToRemove));
-    if (formData.trainingTopic === topicToRemove) {
-      updateFormField("trainingTopic", "");
-    }
+    if (formData.trainingTopic === topicToRemove) updateFormField("trainingTopic", "");
   }
 
   function handleUseCustomFacilitator() {
     const facilitator = customFacilitator.trim();
     if (!facilitator) return;
-    setCustomFacilitatorOptions((current) =>
-      current.includes(facilitator) ? current : [...current, facilitator]
-    );
+    setCustomFacilitatorOptions((current) => current.includes(facilitator) ? current : [...current, facilitator]);
     updateFormField("facilitator", facilitator);
     setCustomFacilitator("");
   }
 
   function handleRemoveFacilitatorOption(facilitatorToRemove) {
-    setCustomFacilitatorOptions((current) =>
-      current.filter((facilitator) => facilitator !== facilitatorToRemove)
-    );
-    if (formData.facilitator === facilitatorToRemove) {
-      updateFormField("facilitator", "");
-    }
+    setCustomFacilitatorOptions((current) => current.filter((facilitator) => facilitator !== facilitatorToRemove));
+    if (formData.facilitator === facilitatorToRemove) updateFormField("facilitator", "");
   }
 
   return (
@@ -907,10 +690,7 @@ export default function TrainingCalendarApp() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            "grid gap-4",
-            isRightPanelCollapsed ? "lg:grid-cols-[1fr_auto]" : "lg:grid-cols-[1.4fr_auto_0.9fr]"
-          )}
+          className={cn("grid gap-4", isRightPanelCollapsed ? "lg:grid-cols-[1fr_auto]" : "lg:grid-cols-[1.4fr_auto_0.9fr]")}
         >
           <Card className="rounded-2xl border-slate-200 shadow-sm">
             <CardHeader className="pb-3">
@@ -920,57 +700,23 @@ export default function TrainingCalendarApp() {
                     <Calendar className="h-6 w-6" />
                     Green Academy Training Calendar
                   </CardTitle>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Display, filter, and review training sessions by day.
-                  </p>
+                  <p className="mt-1 text-sm text-slate-600">Display, filter, and review training sessions by day.</p>
                 </div>
 
                 <div className="flex w-full max-w-[760px] flex-col gap-3">
-                  <div className="w-full">
-                    <Input
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search title, topic, entity, audience, facilitator..."
-                      className="rounded-xl bg-white"
-                    />
-                  </div>
+                  <Input
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search title, topic, entity, audience, facilitator..."
+                    className="rounded-xl bg-white"
+                  />
 
                   <div className="flex flex-wrap gap-2">
-                    <FilterSelect
-                      icon={Filter}
-                      label="Type"
-                      value={selectedTrainingType}
-                      onChange={(e) => setSelectedTrainingType(e.target.value)}
-                      options={trainingTypes}
-                    />
-                    <FilterSelect
-                      icon={Users}
-                      label="Audience"
-                      value={selectedAudience}
-                      onChange={(e) => setSelectedAudience(e.target.value)}
-                      options={audienceOptions}
-                    />
-                    <FilterSelect
-                      icon={BookOpen}
-                      label="Content"
-                      value={selectedContentType}
-                      onChange={(e) => setSelectedContentType(e.target.value)}
-                      options={contentTypeOptions}
-                    />
-                    <FilterSelect
-                      icon={Monitor}
-                      label="Delivery"
-                      value={selectedDeliveryMethod}
-                      onChange={(e) => setSelectedDeliveryMethod(e.target.value)}
-                      options={deliveryMethodOptions}
-                    />
-                    <FilterSelect
-                      icon={Briefcase}
-                      label="Facilitator"
-                      value={selectedFacilitator}
-                      onChange={(e) => setSelectedFacilitator(e.target.value)}
-                      options={facilitatorFilterOptions}
-                    />
+                    <FilterSelect icon={Filter} label="Type" value={selectedTrainingType} onChange={(e) => setSelectedTrainingType(e.target.value)} options={trainingTypes} />
+                    <FilterSelect icon={Users} label="Audience" value={selectedAudience} onChange={(e) => setSelectedAudience(e.target.value)} options={audienceOptions} />
+                    <FilterSelect icon={BookOpen} label="Content" value={selectedContentType} onChange={(e) => setSelectedContentType(e.target.value)} options={contentTypeOptions} />
+                    <FilterSelect icon={Monitor} label="Delivery" value={selectedDeliveryMethod} onChange={(e) => setSelectedDeliveryMethod(e.target.value)} options={deliveryMethodOptions} />
+                    <FilterSelect icon={Briefcase} label="Facilitator" value={selectedFacilitator} onChange={(e) => setSelectedFacilitator(e.target.value)} options={facilitatorFilterOptions} />
                   </div>
                 </div>
               </div>
@@ -980,25 +726,15 @@ export default function TrainingCalendarApp() {
               <div className="grid gap-3 sm:grid-cols-3">
                 <Card className="rounded-2xl border-slate-200 shadow-none">
                   <CardContent className="flex items-center gap-3 p-4">
-                    <div className="rounded-2xl bg-slate-100 p-3">
-                      <Dumbbell className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">Sessions</p>
-                      <p className="text-2xl font-semibold">{totalSessions}</p>
-                    </div>
+                    <div className="rounded-2xl bg-slate-100 p-3"><Dumbbell className="h-5 w-5" /></div>
+                    <div><p className="text-xs uppercase tracking-wide text-slate-500">Sessions</p><p className="text-2xl font-semibold">{totalSessions}</p></div>
                   </CardContent>
                 </Card>
 
                 <Card className="rounded-2xl border-slate-200 shadow-none">
                   <CardContent className="flex items-center gap-3 p-4">
-                    <div className="rounded-2xl bg-slate-100 p-3">
-                      <Clock3 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">Hours Scheduled</p>
-                      <p className="text-2xl font-semibold">{totalHours.toFixed(1)}</p>
-                    </div>
+                    <div className="rounded-2xl bg-slate-100 p-3"><Clock3 className="h-5 w-5" /></div>
+                    <div><p className="text-xs uppercase tracking-wide text-slate-500">Hours Scheduled</p><p className="text-2xl font-semibold">{totalHours.toFixed(1)}</p></div>
                   </CardContent>
                 </Card>
 
@@ -1006,11 +742,7 @@ export default function TrainingCalendarApp() {
                   <CardContent className="p-4">
                     <p className="text-xs uppercase tracking-wide text-slate-500">Selected Date</p>
                     <p className="text-lg font-semibold">
-                      {selectedDate.toLocaleDateString(undefined, {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                      })}
+                      {selectedDate.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
                     </p>
                   </CardContent>
                 </Card>
@@ -1020,13 +752,7 @@ export default function TrainingCalendarApp() {
                 {Object.entries(trainingTypeCounts).map(([type, count]) => {
                   const style = trainingTypeStyles[type] || trainingTypeStyles.Default;
                   return (
-                    <div
-                      key={type}
-                      className={cn(
-                        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold",
-                        style.badge
-                      )}
-                    >
+                    <div key={type} className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold", style.badge)}>
                       <span className={cn("h-2.5 w-2.5 rounded-full", style.accent)} />
                       <span>{type}</span>
                       <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-[10px]">{count}</span>
@@ -1036,23 +762,15 @@ export default function TrainingCalendarApp() {
               </div>
 
               <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="rounded-xl">
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
+                <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="rounded-xl"><ChevronLeft className="h-5 w-5" /></Button>
                 <h2 className="text-lg font-semibold">{formatMonthYear(currentMonth)}</h2>
-                <Button variant="ghost" size="icon" onClick={handleNextMonth} className="rounded-xl">
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
+                <Button variant="ghost" size="icon" onClick={handleNextMonth} className="rounded-xl"><ChevronRight className="h-5 w-5" /></Button>
               </div>
 
               <div className="grid grid-cols-7 gap-2 text-center text-xs font-medium uppercase tracking-wide text-slate-500">
                 {Array.from({ length: 7 }).map((_, index) => {
                   const base = new Date(2026, 0, 5 + index);
-                  return (
-                    <div key={index} className="py-2">
-                      {formatDayLabel(base)}
-                    </div>
-                  );
+                  return <div key={index} className="py-2">{formatDayLabel(base)}</div>;
                 })}
               </div>
 
@@ -1077,32 +795,19 @@ export default function TrainingCalendarApp() {
                     >
                       <div className="mb-2 flex items-center justify-between">
                         <span className="text-sm font-semibold">{date.getDate()}</span>
-                        {sessions.length > 0 && (
-                          <Badge variant="secondary" className="rounded-full">
-                            {sessions.length}
-                          </Badge>
-                        )}
+                        {sessions.length > 0 && <Badge variant="secondary" className="rounded-full">{sessions.length}</Badge>}
                       </div>
 
                       <div className="space-y-1">
                         {sessions.slice(0, 3).map((session) => {
-                          const audienceMeta = getAudienceMeta(session.audience);
-                          const contentMeta = getContentMeta(session.contentType);
-                          const deliveryMeta = getDeliveryMeta(session.deliveryMethod);
-                          const AudienceIcon = audienceMeta.icon;
-                          const ContentIcon = contentMeta.icon;
-                          const DeliveryIcon = deliveryMeta.icon;
+                          const AudienceIcon = getAudienceMeta(session.audience).icon;
+                          const ContentIcon = getContentMeta(session.contentType).icon;
+                          const DeliveryIcon = getDeliveryMeta(session.deliveryMethod).icon;
 
                           return (
-                            <div
-                              key={session.id}
-                              className={cn(
-                                "rounded-lg border px-2 py-1 text-[11px] font-medium",
-                                (trainingTypeStyles[session.trainingType] || trainingTypeStyles.Default).badge
-                              )}
-                            >
+                            <div key={session.id} className={cn("rounded-lg border px-2 py-1 text-[11px] font-medium", (trainingTypeStyles[session.trainingType] || trainingTypeStyles.Default).badge)}>
                               <div className="flex items-center gap-1 overflow-hidden">
-                                <span className="shrink-0">{session.startTime ? `${session.startTime}` : "--:--"}</span>
+                                <span className="shrink-0">{session.startTime || "--:--"}</span>
                                 <AudienceIcon className="h-3.5 w-3.5 shrink-0" />
                                 <ContentIcon className="h-3.5 w-3.5 shrink-0" />
                                 <DeliveryIcon className="h-3.5 w-3.5 shrink-0" />
@@ -1111,9 +816,7 @@ export default function TrainingCalendarApp() {
                             </div>
                           );
                         })}
-                        {sessions.length > 3 && (
-                          <div className="text-[11px] text-slate-500">+{sessions.length - 3} more</div>
-                        )}
+                        {sessions.length > 3 && <div className="text-[11px] text-slate-500">+{sessions.length - 3} more</div>}
                       </div>
                     </motion.button>
                   );
@@ -1122,18 +825,11 @@ export default function TrainingCalendarApp() {
             </CardContent>
           </Card>
 
-          <div
-            className={cn(
-              "hidden lg:flex items-start justify-center pt-24",
-              isRightPanelCollapsed ? "lg:-ml-2" : "lg:-mx-2"
-            )}
-          >
+          <div className={cn("hidden lg:flex items-start justify-center pt-24", isRightPanelCollapsed ? "lg:-ml-2" : "lg:-mx-2")}>
             <button
               type="button"
               onClick={() => setIsRightPanelCollapsed((current) => !current)}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
-              aria-label={isRightPanelCollapsed ? "Expand side panel" : "Collapse side panel"}
-              title={isRightPanelCollapsed ? "Expand side panel" : "Collapse side panel"}
             >
               <span className="text-xl font-semibold leading-none">{isRightPanelCollapsed ? "‹" : "›"}</span>
             </button>
@@ -1143,237 +839,94 @@ export default function TrainingCalendarApp() {
             <div className="space-y-4">
               <Card className="rounded-2xl border-slate-200 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl">
-                    {editingSessionId !== null ? "Edit training session" : "Add training session"}
-                  </CardTitle>
+                  <CardTitle className="text-xl">{editingSessionId !== null ? "Edit training session" : "Add training session"}</CardTitle>
                 </CardHeader>
 
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="training-topic">Topic</Label>
-                      <CustomDropdown
-                        value={formData.trainingTopic}
-                        placeholder="Select or add a topic"
-                        options={trainingTopicOptions}
-                        onSelect={(option) => updateFormField("trainingTopic", option)}
-                        onRemove={handleRemoveTopicOption}
-                      />
+                      <Label>Topic</Label>
+                      <CustomDropdown value={formData.trainingTopic} placeholder="Select or add a topic" options={trainingTopicOptions} onSelect={(option) => updateFormField("trainingTopic", option)} onRemove={handleRemoveTopicOption} />
                     </div>
 
                     <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="custom-topic">Add new topic</Label>
+                      <Label>Add new topic</Label>
                       <div className="flex gap-2">
-                        <Input
-                          id="custom-topic"
-                          value={customTopic}
-                          onChange={(e) => setCustomTopic(e.target.value)}
-                          placeholder="Type a new training topic"
-                          className="rounded-xl"
-                        />
-                        <Button type="button" variant="outline" onClick={handleUseCustomTopic} className="rounded-xl">
-                          Use
-                        </Button>
+                        <Input value={customTopic} onChange={(e) => setCustomTopic(e.target.value)} placeholder="Type a new training topic" className="rounded-xl" />
+                        <Button type="button" variant="outline" onClick={handleUseCustomTopic} className="rounded-xl">Use</Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 sm:col-span-2"><Label>Entity</Label><Input value={formData.entity} onChange={(e) => updateFormField("entity", e.target.value)} className="rounded-xl" /></div>
+                    <div className="space-y-2"><Label>Date</Label><Input type="date" value={formData.date} onChange={(e) => updateFormField("date", e.target.value)} className="rounded-xl" /></div>
+
+                    <div className="space-y-2">
+                      <Label>Training Type</Label>
+                      <select value={formData.trainingType} onChange={(e) => updateFormField("trainingType", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none">
+                        {TRAINING_TYPE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2"><Label>Start time</Label><Input type="time" value={formData.startTime} onChange={(e) => updateFormField("startTime", e.target.value)} className="rounded-xl" /></div>
+                    <div className="space-y-2"><Label>End time</Label><Input type="time" value={formData.endTime} onChange={(e) => updateFormField("endTime", e.target.value)} className="rounded-xl" /></div>
+
+                    <div className="space-y-2">
+                      <Label>Audience</Label>
+                      <select value={formData.audience} onChange={(e) => updateFormField("audience", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none">
+                        {AUDIENCE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Content</Label>
+                      <select value={formData.contentType} onChange={(e) => updateFormField("contentType", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none">
+                        {CONTENT_TYPE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label>Delivery Method</Label>
+                      <select value={formData.deliveryMethod} onChange={(e) => updateFormField("deliveryMethod", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none">
+                        {DELIVERY_METHOD_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2"><Label>Location</Label><Input value={formData.location} onChange={(e) => updateFormField("location", e.target.value)} className="rounded-xl" /></div>
+
+                    <div className="space-y-2">
+                      <Label>Facilitator</Label>
+                      <CustomDropdown value={formData.facilitator} placeholder="Select or add a facilitator" options={facilitatorOptions} onSelect={(option) => updateFormField("facilitator", option)} onRemove={handleRemoveFacilitatorOption} />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Add new facilitator</Label>
+                      <div className="flex gap-2">
+                        <Input value={customFacilitator} onChange={(e) => setCustomFacilitator(e.target.value)} placeholder="Type a facilitator name" className="rounded-xl" />
+                        <Button type="button" variant="outline" onClick={handleUseCustomFacilitator} className="rounded-xl">Use</Button>
                       </div>
                     </div>
 
                     <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="entity">Entity</Label>
-                      <Input
-                        id="entity"
-                        value={formData.entity}
-                        onChange={(e) => updateFormField("entity", e.target.value)}
-                        placeholder="Institution, company, or contractor"
-                        className="rounded-xl"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="session-date">Date</Label>
-                      <Input
-                        id="session-date"
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => updateFormField("date", e.target.value)}
-                        className="rounded-xl"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="training-type">Training Type</Label>
-                      <select
-                        id="training-type"
-                        value={formData.trainingType}
-                        onChange={(e) => updateFormField("trainingType", e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                      >
-                        {TRAINING_TYPE_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="start-time">Start time</Label>
-                      <Input
-                        id="start-time"
-                        type="time"
-                        value={formData.startTime}
-                        onChange={(e) => updateFormField("startTime", e.target.value)}
-                        className="rounded-xl"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="end-time">End time</Label>
-                      <Input
-                        id="end-time"
-                        type="time"
-                        value={formData.endTime}
-                        onChange={(e) => updateFormField("endTime", e.target.value)}
-                        className="rounded-xl"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="audience">Audience</Label>
-                      <select
-                        id="audience"
-                        value={formData.audience}
-                        onChange={(e) => updateFormField("audience", e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                      >
-                        {AUDIENCE_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="content-type">Content</Label>
-                      <select
-                        id="content-type"
-                        value={formData.contentType}
-                        onChange={(e) => updateFormField("contentType", e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                      >
-                        {CONTENT_TYPE_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="delivery-method">Delivery Method</Label>
-                      <select
-                        id="delivery-method"
-                        value={formData.deliveryMethod}
-                        onChange={(e) => updateFormField("deliveryMethod", e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                      >
-                        {DELIVERY_METHOD_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        value={formData.location}
-                        onChange={(e) => updateFormField("location", e.target.value)}
-                        placeholder="Teams, site, room..."
-                        className="rounded-xl"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="facilitator">Facilitator</Label>
-                      <CustomDropdown
-                        value={formData.facilitator}
-                        placeholder="Select or add a facilitator"
-                        options={facilitatorOptions}
-                        onSelect={(option) => updateFormField("facilitator", option)}
-                        onRemove={handleRemoveFacilitatorOption}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="custom-facilitator">Add new facilitator</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="custom-facilitator"
-                          value={customFacilitator}
-                          onChange={(e) => setCustomFacilitator(e.target.value)}
-                          placeholder="Type a facilitator name"
-                          className="rounded-xl"
-                        />
-                        <Button type="button" variant="outline" onClick={handleUseCustomFacilitator} className="rounded-xl">
-                          Use
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="notes">Notes</Label>
-                      <Textarea
-                        id="notes"
-                        value={formData.notes}
-                        onChange={(e) => updateFormField("notes", e.target.value)}
-                        className="min-h-[100px] rounded-2xl"
-                        placeholder="Optional notes"
-                      />
+                      <Label>Notes</Label>
+                      <Textarea value={formData.notes} onChange={(e) => updateFormField("notes", e.target.value)} className="min-h-[100px] rounded-2xl" />
                     </div>
                   </div>
 
-                  {formError && (
-                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                      {formError}
-                    </div>
-                  )}
+                  {formError && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
 
                   <div className="flex flex-wrap gap-2">
-                    <Button onClick={handleAddSession} className="rounded-xl">
-                      {editingSessionId !== null ? "Save changes" : "Add session"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setFormData((current) => ({ ...current, date: toDateKey(selectedDate) }))}
-                      className="rounded-xl"
-                    >
-                      Use selected date
-                    </Button>
-                    {editingSessionId !== null && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => resetForm(toDateKey(selectedDate))}
-                        className="rounded-xl"
-                      >
-                        Cancel edit
-                      </Button>
-                    )}
+                    <Button onClick={handleAddSession} className="rounded-xl">{editingSessionId !== null ? "Save changes" : "Add session"}</Button>
+                    <Button variant="outline" onClick={() => setFormData((current) => ({ ...current, date: toDateKey(selectedDate) }))} className="rounded-xl">Use selected date</Button>
+                    {editingSessionId !== null && <Button variant="ghost" onClick={() => resetForm(toDateKey(selectedDate))} className="rounded-xl">Cancel edit</Button>}
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="rounded-2xl border-slate-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-xl">Training sessions on selected date</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-xl">Training sessions on selected date</CardTitle></CardHeader>
                 <CardContent>
                   {selectedSessions.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
-                      No training sessions match the current filters for this day.
-                    </div>
+                    <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">No training sessions match the current filters for this day.</div>
                   ) : (
                     <div className="space-y-3">
                       {selectedSessions.map((session) => {
@@ -1386,53 +939,19 @@ export default function TrainingCalendarApp() {
                         const DeliveryIcon = deliveryMeta.icon;
 
                         return (
-                          <motion.div
-                            key={session.id}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className={cn("overflow-hidden rounded-2xl border bg-white", typeStyle.soft)}
-                          >
+                          <motion.div key={session.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cn("overflow-hidden rounded-2xl border bg-white", typeStyle.soft)}>
                             <div className={cn("h-2 w-full", typeStyle.accent)} />
                             <div className="p-4">
-                              <div className="mb-2 flex items-start justify-between gap-3">
-                                <div>
-                                  <h3 className={cn("font-semibold", typeStyle.text)}>
-                                    {session.trainingTopic || session.title}
-                                  </h3>
-                                  <div className="mt-2 flex flex-wrap gap-2">
-                                    <Badge className={cn("border", typeStyle.badge)}>
-                                      {session.trainingType}
-                                    </Badge>
-                                    {session.trainingTopic && <Badge variant="outline">Topic: {session.trainingTopic}</Badge>}
-                                    {session.entity && <Badge variant="outline">Entity: {session.entity}</Badge>}
-                                    {session.facilitator && <Badge variant="outline">Facilitator: {session.facilitator}</Badge>}
-                                  </div>
-                                </div>
+                              <h3 className={cn("font-semibold", typeStyle.text)}>{session.trainingTopic || session.title}</h3>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                <Badge className={cn("border", typeStyle.badge)}>{session.trainingType}</Badge>
+                                {session.entity && <Badge variant="outline">Entity: {session.entity}</Badge>}
+                                {session.facilitator && <Badge variant="outline">Facilitator: {session.facilitator}</Badge>}
                               </div>
 
-                              <div className="space-y-3 text-sm text-slate-600">
-                                <div className="flex items-center gap-2">
-                                  <Clock3 className="h-4 w-4" />
-                                  <span>
-                                    {session.startTime || "--:--"}
-                                    {session.endTime ? ` - ${session.endTime}` : ""}
-                                  </span>
-                                </div>
-
-                                {session.location && (
-                                  <div className="flex items-center gap-2">
-                                    <MapPin className="h-4 w-4" />
-                                    <span>{session.location}</span>
-                                  </div>
-                                )}
-
-                                {session.entity && (
-                                  <div className="flex items-center gap-2">
-                                    <Building2 className="h-4 w-4" />
-                                    <span>Entity: {session.entity}</span>
-                                  </div>
-                                )}
-
+                              <div className="mt-3 space-y-3 text-sm text-slate-600">
+                                <div className="flex items-center gap-2"><Clock3 className="h-4 w-4" /><span>{session.startTime || "--:--"}{session.endTime ? ` - ${session.endTime}` : ""}</span></div>
+                                {session.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /><span>{session.location}</span></div>}
                                 <div className="flex flex-wrap gap-2 pt-1">
                                   <HierarchyTag icon={audienceMeta.icon} label={audienceMeta.label} />
                                   <HierarchyTag icon={contentMeta.icon} label={contentMeta.label} />
@@ -1440,40 +959,18 @@ export default function TrainingCalendarApp() {
                                 </div>
 
                                 <div className="grid gap-2 pt-1 text-sm sm:grid-cols-2">
-                                  {session.trainingTopic && (
-                                    <div className="flex items-center gap-2 sm:col-span-2">
-                                      <BookOpen className="h-4 w-4" />
-                                      <span>Topic: {session.trainingTopic}</span>
-                                    </div>
-                                  )}
-                                  <div className="flex items-center gap-2">
-                                    <Layers3 className="h-4 w-4" />
-                                    <span>Type: {session.trainingType}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <AudienceIcon className="h-4 w-4" />
-                                    <span>Audience: {session.audience}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <ContentIcon className="h-4 w-4" />
-                                    <span>Content: {session.contentType}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <DeliveryIcon className="h-4 w-4" />
-                                    <span>Delivery: {session.deliveryMethod}</span>
-                                  </div>
+                                  <div className="flex items-center gap-2 sm:col-span-2"><BookOpen className="h-4 w-4" /><span>Topic: {session.trainingTopic}</span></div>
+                                  <div className="flex items-center gap-2"><Layers3 className="h-4 w-4" /><span>Type: {session.trainingType}</span></div>
+                                  <div className="flex items-center gap-2"><AudienceIcon className="h-4 w-4" /><span>Audience: {session.audience}</span></div>
+                                  <div className="flex items-center gap-2"><ContentIcon className="h-4 w-4" /><span>Content: {session.contentType}</span></div>
+                                  <div className="flex items-center gap-2"><DeliveryIcon className="h-4 w-4" /><span>Delivery: {session.deliveryMethod}</span></div>
                                 </div>
 
                                 {session.notes && <p className="pt-1">{session.notes}</p>}
 
                                 <div className="flex flex-wrap gap-2 pt-2">
-                                  <Button variant="outline" onClick={() => handleEditSession(session)} className="rounded-xl">
-                                    Edit session
-                                  </Button>
-                                  <Button variant="outline" onClick={() => handleDeleteSession(session.id)} className="rounded-xl">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete session
-                                  </Button>
+                                  <Button variant="outline" onClick={() => handleEditSession(session)} className="rounded-xl">Edit session</Button>
+                                  <Button variant="outline" onClick={() => handleDeleteSession(session.id)} className="rounded-xl"><Trash2 className="mr-2 h-4 w-4" />Delete session</Button>
                                 </div>
                               </div>
                             </div>
@@ -1487,64 +984,27 @@ export default function TrainingCalendarApp() {
 
               <Card className="rounded-2xl border-slate-200 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <Upload className="h-5 w-5" />
-                    Import training data
-                  </CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-xl"><Upload className="h-5 w-5" />Import training data</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-slate-600">
-                    Upload a CSV file directly, or paste CSV / JSON below. CSV can use commas or semicolons. Existing matching sessions are updated instead of duplicated.
+                    Upload a CSV file directly, or paste CSV / JSON below. Each import replaces the whole calendar with the uploaded file.
                   </p>
 
                   <div className="space-y-2">
                     <Label htmlFor="csv-file">Upload CSV file</Label>
-                    <Input
-                      id="csv-file"
-                      type="file"
-                      accept=".csv,text/csv"
-                      onChange={handleCsvFileUpload}
-                      className="rounded-xl"
-                    />
+                    <Input id="csv-file" type="file" accept=".csv,text/csv" onChange={handleCsvFileUpload} className="rounded-xl" />
                   </div>
 
-                  <Textarea
-                    value={rawImport}
-                    onChange={(e) => setRawImport(e.target.value)}
-                    className="min-h-[220px] rounded-2xl font-mono text-xs"
-                    placeholder="Paste CSV or JSON here if you do not want to upload a file"
-                  />
+                  <Textarea value={rawImport} onChange={(e) => setRawImport(e.target.value)} className="min-h-[220px] rounded-2xl font-mono text-xs" placeholder="Paste CSV or JSON here if you do not want to upload a file" />
 
-                  {importError && (
-                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                      {importError}
-                    </div>
-                  )}
-
-                  {importSuccess && (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                      {importSuccess}
-                    </div>
-                  )}
+                  {importError && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{importError}</div>}
+                  {importSuccess && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{importSuccess}</div>}
 
                   <div className="flex flex-wrap gap-2">
-                    <Button onClick={handleImportJson} className="rounded-xl" disabled={isImporting}>
-                      {isImporting ? "Importing..." : "Load as JSON"}
-                    </Button>
-                    <Button variant="outline" onClick={handleImportCsv} className="rounded-xl" disabled={isImporting}>
-                      {isImporting ? "Importing..." : "Load as CSV"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setTrainingData(sampleTrainingData);
-                        setImportError("");
-                        setImportSuccess("");
-                      }}
-                      className="rounded-xl"
-                    >
-                      Reset sample data
-                    </Button>
+                    <Button onClick={handleImportJson} className="rounded-xl" disabled={isImporting}>{isImporting ? "Importing..." : "Load as JSON"}</Button>
+                    <Button variant="outline" onClick={handleImportCsv} className="rounded-xl" disabled={isImporting}>{isImporting ? "Importing..." : "Load as CSV"}</Button>
+                    <Button variant="ghost" onClick={() => { setTrainingData(sampleTrainingData); setImportError(""); setImportSuccess(""); }} className="rounded-xl">Reset sample data</Button>
                   </div>
                 </CardContent>
               </Card>
